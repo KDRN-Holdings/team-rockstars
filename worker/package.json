@@ -1,0 +1,16 @@
+{
+  "name": "tr-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Team Rockstars API — Cloudflare Worker + D1 + Resend",
+  "scripts": {
+    "db:create": "wrangler d1 create team-rockstars",
+    "db:init": "wrangler d1 execute team-rockstars --file=./schema.sql --remote",
+    "db:check": "wrangler d1 execute team-rockstars --remote --command \"SELECT email, role, status FROM members;\"",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.1"
+  }
+}
