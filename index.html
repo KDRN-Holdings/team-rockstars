@@ -358,6 +358,9 @@
                       <button type="button" onClick="{{ c.onComplete }}" aria-label="{{ c.completeAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:oklch(0.52 0.13 155);color:#fff;cursor:pointer" style-hover="background:oklch(0.45 0.13 155)">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
                       </button>
+                      <button type="button" onClick="{{ c.onCant }}" aria-label="{{ c.cantAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:oklch(0.55 0.19 25);color:#fff;cursor:pointer" style-hover="background:oklch(0.47 0.19 25)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                      </button>
                     </div>
                   </sc-if>
                   <sc-if value="{{ c.isDone }}" hint-placeholder-val="{{ false }}">
@@ -380,10 +383,10 @@
                     <sc-if value="{{ c.isOpen }}" hint-placeholder-val="{{ true }}">
                       <div style="display:flex;flex-direction:column;gap:8px">
                         <button type="button" onClick="{{ c.onCopy }}" style="width:100%;min-height:48px;padding:0 10px;border:1px solid oklch(0.86 0.055 262);border-radius:11px;background:oklch(0.97 0.02 262);color:oklch(0.4 0.14 262);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" style-hover="background:oklch(0.94 0.035 262)">{{ c.copyLabel }}</button>
-                        <div style="display:flex;gap:8px">
-                          <button type="button" onClick="{{ c.onCant }}" style="flex:1;min-width:0;min-height:48px;padding:0 12px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#4a4c4f;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#faf9f7">Can&rsquo;t do this</button>
-                        </div>
                       </div>
+                    </sc-if>
+                    <sc-if value="{{ c.hasReason }}" hint-placeholder-val="{{ false }}">
+                      <p style="margin:0;font-size:12.5px;color:#4a4c4f;background:oklch(0.97 0.02 25);border:1px solid oklch(0.9 0.04 25);border-radius:11px;padding:8px 10px">{{ c.reasonLabel }}</p>
                     </sc-if>
                     <sc-if value="{{ c.isDone }}" hint-placeholder-val="{{ false }}">
                       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -1289,6 +1292,9 @@
                   <span style="flex:none;padding:4px 8px;border-radius:11px;font-size:11px;font-weight:700;background:{{ ao.stateBg }};color:{{ ao.stateFg }}">{{ ao.stateLabel }}</span>
                 </div>
                 <div style="font-size:11.5px;color:#6b6d70;background:#f6f5f2;border-radius:11px;padding:7px 9px">{{ ao.counts }}</div>
+                <sc-if value="{{ ao.hasReasons }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:11.5px;color:#4a4c4f;background:oklch(0.97 0.02 25);border-radius:11px;padding:7px 9px">{{ ao.reasons }}</div>
+                </sc-if>
                 <button type="button" onClick="{{ ao.onAction }}" style="align-self:flex-start;min-height:36px;padding:0 11px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#1c1d1f;font-size:12.5px;font-weight:600;cursor:pointer">{{ ao.actionLabel }}</button>
               </div>
             </sc-for>
@@ -1309,6 +1315,10 @@
                 <span style="font-size:14px;font-weight:700">{{ ar.business }}</span>
                 <span style="font-size:12px;color:#9a9c9f">{{ ar.meta }}</span>
                 <p style="margin:0;font-size:12.5px;color:#38393b;background:#f6f5f2;border-radius:11px;padding:8px 10px">{{ ar.note }}</p>
+                <div style="display:flex;gap:8px;margin-top:2px">
+                  <button type="button" onClick="{{ ar.onDecline }}" style="flex:none;min-height:44px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#4a4c4f;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#faf9f7">Decline</button>
+                  <button type="button" onClick="{{ ar.onApprove }}" style="flex:1;min-width:0;min-height:44px;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:14px;font-weight:700;cursor:pointer" style-hover="background:oklch(0.42 0.16 262)">Approve</button>
+                </div>
               </div>
             </sc-for>
           </div>
@@ -1423,10 +1433,6 @@
             <sc-if value="{{ mfOpen }}" hint-placeholder-val="{{ false }}">
               <div style="background:#fff;border:1px solid oklch(0.86 0.055 262);border-radius:14px;padding:15px;display:flex;flex-direction:column;gap:13px">
                 <h2 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:14px;font-weight:700">{{ mfTitle }}</h2>
-                <div>
-                  <label for="tr-mn" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Full name</label>
-                  <input id="tr-mn" type="text" value="{{ mfName }}" onChange="{{ onMfName }}" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
-                </div>
                 <div>
                   <label for="tr-me" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Email address</label>
                   <input id="tr-me" type="email" value="{{ mfEmail }}" onChange="{{ onMfEmail }}" placeholder="member@business.com" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
@@ -1678,6 +1684,13 @@
             <span style="font-size:13px;color:#6b6d70">{{ so.note }}</span>
           </button>
         </sc-for>
+        <sc-if value="{{ sheetOtherOpen }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <label for="tr-ur" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Tell us more <span style="font-weight:400;color:#9a9c9f">&mdash; optional</span></label>
+            <textarea id="tr-ur" rows="3" value="{{ sheetOtherText }}" onChange="{{ onSheetOtherText }}" placeholder="What stopped you from commenting?" style="width:100%;padding:11px 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.5"></textarea>
+            <button type="button" onClick="{{ onSaveSheetOther }}" style="margin-top:9px;min-height:48px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Save reason</button>
+          </div>
+        </sc-if>
         <button type="button" onClick="{{ onCloseSheet }}" style="min-height:48px;width:100%;border:none;border-radius:12px;background:#f0efec;color:#4a4c4f;font-size:15px;font-weight:600;cursor:pointer;margin-top:2px">Cancel</button>
       </div>
     </div>
@@ -1874,9 +1887,20 @@ const STATUS = {
   completed: { label: 'Completed', bg: 'oklch(0.95 0.05 155)', fg: 'oklch(0.38 0.1 155)' },
   not_member: { label: 'Not a member', bg: '#f0efec', fg: '#4a4c4f' },
   join_pending: { label: 'Join pending', bg: 'oklch(0.96 0.04 70)', fg: 'oklch(0.42 0.11 70)' },
-  banned: { label: 'Banned', bg: 'oklch(0.96 0.03 25)', fg: 'oklch(0.45 0.14 25)' }
+  banned: { label: 'Banned', bg: 'oklch(0.96 0.03 25)', fg: 'oklch(0.45 0.14 25)' },
+  unable: { label: 'Unable', bg: 'oklch(0.96 0.03 25)', fg: 'oklch(0.45 0.14 25)' }
 };
-const UNABLE = ['not_member', 'join_pending', 'banned'];
+const UNABLE = ['not_member', 'join_pending', 'banned', 'unable'];
+// Reasons a member can give for not being able to comment on a post.
+const UNABLE_REASONS = [
+  { label: 'Post is no longer available', note: 'It was deleted or can no longer be found.' },
+  { label: 'Comments are turned off', note: 'The post does not accept new comments.' },
+  { label: 'I am not eligible to comment', note: 'Group or post rules stop me commenting.' },
+  { label: 'I already commented', note: 'My comment is already on this post.' },
+  { label: 'I cannot access the post', note: 'I am not in the group, or it will not open.' },
+  { label: 'Not relevant / not appropriate for me', note: 'Not a fit for me to comment on.' },
+  { label: 'Other', note: 'Add your own reason.', other: true }
+];
 const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
 
 class Component extends DCLogic {
@@ -1905,7 +1929,7 @@ class Component extends DCLogic {
       bizForm: null, bizError: '', expandedBiz: null, basicsOpen: false, avatarDraft: null,
       groupSearch: '', groupFilter: 'all', groupCat: '', groupLoc: '', groupsShown: 12, groupFiltersOpen: false,
       gForm: null, gError: '', groupStatusFor: null,
-      menuOpen: false, sheet: null, cs: null, confirm: null, toast: '', copied: '', clockOffset: 0
+      menuOpen: false, sheet: null, sheetOtherText: '', cs: null, confirm: null, toast: '', copied: '', clockOffset: 0
     };
   }
 
@@ -2077,11 +2101,13 @@ class Component extends DCLogic {
         const row = s.statuses.find(x => x.opportunityId === oid && x.memberId === meId);
         if (row) {
           row.status = b.status;
+          row.reason = b.reason || '';
           row.completedAt = b.status === 'completed' ? now : null;
           row.statusChangedAt = now;
         } else {
           s.statuses.push({
             id: nid(), opportunityId: oid, memberId: meId, status: b.status,
+            reason: b.reason || '',
             eligibleFrom: now, completedAt: b.status === 'completed' ? now : null,
             statusChangedAt: now
           });
@@ -2148,7 +2174,7 @@ class Component extends DCLogic {
         }
         const id = nid();
         s.members.push({
-          id, email, fullName: b.fullName || '', businessOwnerName: b.businessOwnerName || b.fullName || '',
+          id, email, fullName: b.fullName || b.businessOwnerName || '', businessOwnerName: b.businessOwnerName || b.fullName || '',
           avatar: null, role: 'member', status: 'active', tagGroup: 'active',
           joinedAt: now, hasPassword: false
         });
@@ -2800,8 +2826,27 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   logEvent() { /* activity is derived server-side from D1 rows */ }
-  setStatus(oppId, status) {
-    this.send('/api/opportunities/status', { opportunityId: oppId, status },
+  // Opens an external link in a new browsing context via a real anchor click, so
+  // the app page is never navigated away from or replaced by a blank document.
+  openExternal(url) {
+    if (!url) { this.flash('No Facebook link saved on this post.'); return false; }
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
+    return true;
+  }
+  markUnable(oppId, reason) {
+    return this.send('/api/opportunities/status',
+      { opportunityId: oppId, status: 'unable', reason: reason || '' }, 'Marked unable')
+      .then(() => this.setState({ sheet: null, sheetOtherText: '' }));
+  }
+  setStatus(oppId, status, reason) {
+    this.send('/api/opportunities/status', { opportunityId: oppId, status, reason: reason || '' },
       status === 'completed' ? 'Tag marked complete' : 'Status changed to ' + ((STATUS[status] || {}).label || status));
   }
   nudge(memberId, message) {
@@ -3067,12 +3112,12 @@ class Component extends DCLogic {
           else if (saved.length > 1) this.setState({ cs: { businessId: o.beneficiaryId } });
           else this.setState({ cf: { id: null, businessId: String(o.beneficiaryId), label: '', text: '' }, cfError: '', screen: 'addComment' });
         },
-        onOpen: () => {
-          const w = window.open(o.facebookUrl, '_blank', 'noopener,noreferrer');
-          if (!w) this.flash('Your browser blocked the pop-up. Allow pop-ups to open Facebook.');
-        },
+        onOpen: () => this.openExternal(o.facebookUrl),
+        cantAria: 'I cannot comment on ' + o.businessDisplayName,
+        hasReason: !!x.reason,
+        reasonLabel: x.reason ? 'Reason: ' + x.reason : '',
         onComplete: () => this.setStatus(o.id, 'completed'),
-        onCant: () => this.setState({ sheet: { oppId: o.id, business: o.businessDisplayName } }),
+        onCant: () => this.setState({ sheet: { oppId: o.id, business: o.businessDisplayName }, sheetOtherText: '' }),
         onReopen: () => this.setStatus(o.id, 'open')
       };
     };
@@ -3109,10 +3154,7 @@ class Component extends DCLogic {
           rowBg: expanded ? '#faf9f7' : '#fff',
           titleColor: declined ? '#4a4c4f' : '#1c1d1f',
           onToggle: () => this.setState({ expandedId: expanded ? null : o.id }),
-          onOpen: () => {
-            const w = window.open(o.facebookUrl, '_blank', 'noopener,noreferrer');
-            if (!w) this.flash('Your browser blocked the pop-up. Allow pop-ups to open Facebook.');
-          },
+          onOpen: () => this.openExternal(o.facebookUrl),
           openAria: 'Open Facebook post in ' + (o.facebookGroupName || 'Facebook'),
           onDecline: () => this.setState({ declineFor: o.id })
         };
@@ -3131,10 +3173,7 @@ class Component extends DCLogic {
           dateLabel: this.fmt(o.createdAt) + ' \u00b7 ' + this.ago(o.createdAt),
           note: o.reviewNote || '',
           hasNote: !!o.reviewNote,
-          onOpen: () => {
-            const w = window.open(o.facebookUrl, '_blank', 'noopener,noreferrer');
-            if (!w) this.flash('Your browser blocked the pop-up. Allow pop-ups to open Facebook.');
-          },
+          onOpen: () => this.openExternal(o.facebookUrl),
           onApprove: () => this.approveOpp(o.id),
           onDecline: () => this.setState({ reviewDeclineFor: o.id })
         };
@@ -3297,8 +3336,7 @@ class Component extends DCLogic {
         joinAria: 'Open ' + g.name + ' on Facebook',
         onStatus: () => this.setState({ groupStatusFor: g.id }),
         onJoin: () => {
-          const w = window.open(g.url, '_blank', 'noopener,noreferrer');
-          if (!w) { this.flash('Your browser blocked the pop-up. Allow pop-ups to open Facebook.'); return; }
+          if (!this.openExternal(g.url)) return;
           if (this.groupStatus(g.id) === 'unknown') this.setGroupStatus(g.id, 'requested');
         }
       };
@@ -4197,11 +4235,17 @@ class Component extends DCLogic {
         .map(o => {
           const rows = db.statuses.filter(y => y.opportunityId === o.id);
           const cnt = k => rows.filter(y => y.status === k).length;
+          const unableRows = rows.filter(y => UNABLE.indexOf(y.status) > -1);
           const sub = this.member(o.submittedById);
           const archived = !!o.archivedAt;
           return {
             business: o.businessDisplayName,
             meta: (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 ' + this.fmt(o.createdAt) + ' \u00b7 ' + (o.facebookGroupName || 'No group'),
+            hasReasons: unableRows.length > 0,
+            reasons: 'Unable: ' + unableRows.slice(0, 8).map(u => {
+              const um = this.member(u.memberId);
+              return (um ? um.fullName.split(' ')[0] : 'Member') + ' \u2014 ' + (u.reason || (STATUS[u.status] || {}).label || 'Unable');
+            }).join(' \u00b7 '),
             counts: 'Done ' + cnt('completed') + ' \u00b7 Open ' + cnt('open') + ' \u00b7 Not member ' + cnt('not_member') + ' \u00b7 Pending ' + cnt('join_pending') + ' \u00b7 Banned ' + cnt('banned'),
             stateLabel: archived ? 'Archived' : o.status === 'pending_review' ? 'In review' : o.status === 'declined' ? 'Not a fit' : 'Live',
             stateBg: archived ? '#f4f3f0' : o.status === 'active' ? 'oklch(0.95 0.05 155)' : 'oklch(0.96 0.04 70)',
@@ -4221,7 +4265,9 @@ class Component extends DCLogic {
           return {
             business: o.businessDisplayName,
             meta: 'From ' + (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 waiting on ' + (ben ? (ben.businessOwnerName || ben.fullName).split(' ')[0] : 'owner') + ' \u00b7 ' + this.ago(o.createdAt),
-            note: o.reviewNote || 'No note left for the owner.'
+            note: o.reviewNote || 'No note left for the owner.',
+            onApprove: () => this.approveOpp(o.id),
+            onDecline: () => this.setState({ reviewDeclineFor: o.id })
           };
         }),
       adminReviewEmpty: !db.opportunities.some(o => o.status === 'pending_review'),
@@ -4258,7 +4304,7 @@ class Component extends DCLogic {
       onCancelMember: () => this.setState({ mf: null, mfError: '' }),
       onSaveMember: () => {
         const f = st.mf;
-        if (!f.name.trim()) { this.setState({ mfError: 'Enter the member\u2019s full name.' }); return; }
+        if (!f.id && !f.owner.trim()) { this.setState({ mfError: 'Enter the business owner\u2019s name.' }); return; }
         const email = f.email.trim().toLowerCase();
         if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) { this.setState({ mfError: 'Enter a valid email address.' }); return; }
         if (db.members.some(m => m.email.toLowerCase() === email && m.id !== f.id)) {
@@ -4279,7 +4325,7 @@ class Component extends DCLogic {
         } else {
           const online = this.configured;
           this.send('/api/admin/members', {
-            email: f.email, fullName: f.name,
+            email: f.email, fullName: f.owner,
             businessOwnerName: f.owner, businessName: f.business
           }, online
             ? 'Member added \u2014 a login code has been emailed to them'
@@ -4406,14 +4452,23 @@ class Component extends DCLogic {
 
       // sheets
       sheetOpen: !!st.sheet,
-      sheetTitle: st.sheet ? 'Why can\u2019t you tag this?' : '',
+      sheetTitle: st.sheet ? 'Why can\u2019t you comment on this?' : '',
       sheetBody: st.sheet ? st.sheet.business + ' \u00b7 these reasons do not count against your completion rate.' : '',
-      sheetOptions: [
-        { label: 'Not a member of the group', note: 'You cannot comment because you are not in this Facebook group.', onClick: () => { this.setStatus(st.sheet.oppId, 'not_member'); this.setState({ sheet: null }); } },
-        { label: 'Asked to join / pending', note: 'You requested to join and are waiting for approval.', onClick: () => { this.setStatus(st.sheet.oppId, 'join_pending'); this.setState({ sheet: null }); } },
-        { label: 'Banned from the group', note: 'You cannot post in this group at all.', onClick: () => { this.setStatus(st.sheet.oppId, 'banned'); this.setState({ sheet: null }); } }
-      ],
-      onCloseSheet: () => this.setState({ sheet: null }),
+      sheetOptions: (st.sheet && st.sheet.other) ? [] : UNABLE_REASONS.map(r => ({
+        label: r.label, note: r.note,
+        onClick: () => {
+          if (r.other) { this.setState({ sheet: { ...st.sheet, other: true }, sheetOtherText: '' }); return; }
+          this.markUnable(st.sheet.oppId, r.label);
+        }
+      })),
+      sheetOtherOpen: !!(st.sheet && st.sheet.other),
+      sheetOtherText: st.sheetOtherText,
+      onSheetOtherText: e => this.setState({ sheetOtherText: e.target.value }),
+      onSaveSheetOther: () => {
+        const extra = (st.sheetOtherText || '').trim();
+        this.markUnable(st.sheet.oppId, extra ? 'Other \u2014 ' + extra : 'Other');
+      },
+      onCloseSheet: () => this.setState({ sheet: null, sheetOtherText: '' }),
 
       csOpen: !!st.cs,
       csTitle: csBiz ? 'My comments for ' + csBiz.businessName : 'My comments',
