@@ -11,6 +11,6 @@
  *           this on a site real members can reach.
  */
 window.TR_CONFIG = {
-  API_BASE: '',
+  API_BASE: 'https://tr-api.morning-wave-675d.workers.dev',
   DEMO_MODE: false
 };
