@@ -7,7 +7,6 @@
 <script src="./support.js"></script>
 </head>
 <body>
- <!-- production refresh -->
 <x-dc>
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -296,6 +295,12 @@
           <button type="button" onClick="{{ onToggleFilters }}" aria-expanded="{{ filtersOpen }}" style="flex:none;min-height:48px;padding:0 12px;border:1px solid #d9d8d4;border-radius:11px;background:{{ filterToggleBg }};color:#4a4c4f;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">{{ filterToggleLabel }}</button>
         </div>
 
+        <button type="button" onClick="{{ onMySavedComments }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:48px;padding:0 13px;border:1px solid oklch(0.86 0.055 262);border-radius:11px;background:oklch(0.97 0.02 262);color:oklch(0.4 0.14 262);font-size:14px;font-weight:600;cursor:pointer;text-align:left" style-hover="background:oklch(0.94 0.035 262)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"></path></svg>
+          <span style="flex:1;min-width:0">My Saved Comments</span>
+          <span style="flex:none;font-size:12px;color:oklch(0.5 0.1 262)">{{ savedCommentCount }}</span>
+        </button>
+
         <sc-if value="{{ filtersOpen }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;gap:8px">
             <select aria-label="Filter by business" value="{{ oppMember }}" onChange="{{ onOppMember }}" style="flex:1;min-width:0;min-height:48px;padding:0 10px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f">
@@ -357,6 +362,9 @@
                       <span aria-hidden="true" style="flex:none;width:7px;height:7px;border-radius:4px;background:{{ c.dot }}"></span>
                       <span style="flex:1;min-width:0;font-size:15px;font-weight:600;color:{{ c.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.business }}</span>
                     </span>
+                    <sc-if value="{{ c.notes }}" hint-placeholder-val="{{ true }}">
+                      <span style="display:block;width:100%;font-size:13px;color:#38393b;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.notes }}</span>
+                    </sc-if>
                     <span style="display:block;width:100%;font-size:12px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.subline }}</span>
                   </button>
                   <sc-if value="{{ c.hasFit }}" hint-placeholder-val="{{ true }}">
@@ -385,7 +393,10 @@
                 <sc-if value="{{ c.expanded }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:2px 12px 12px;display:flex;flex-direction:column;gap:9px">
                     <sc-if value="{{ c.notes }}" hint-placeholder-val="{{ true }}">
-                      <p style="margin:0;font-size:13px;color:#38393b;background:#f2f1ee;border-radius:11px;padding:8px 10px">{{ c.notes }}</p>
+                      <div style="background:oklch(0.97 0.02 262);border:1px solid oklch(0.9 0.04 262);border-radius:11px;padding:8px 10px">
+                        <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:oklch(0.45 0.14 262);margin-bottom:2px">Looking for</div>
+                        <p style="margin:0;font-size:14px;color:#1c1d1f;line-height:1.45">{{ c.notes }}</p>
+                      </div>
                     </sc-if>
                     <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
                       <dt style="color:#9a9c9f">Owner</dt><dd style="margin:0;color:#38393b">{{ c.owner }}</dd>
@@ -414,6 +425,36 @@
             </sc-for>
           </div>
         </sc-if>
+          <sc-if value="{{ hasReviewHistory }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f;margin-bottom:6px">Reviewed posts</div>
+              <div style="background:#fff;border:1px solid #e6e5e2;border-radius:10px;overflow:hidden">
+                <sc-for list="{{ reviewHistory }}" as="rh" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-bottom:1px solid #f2f1ee">
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-size:14px;font-weight:600">{{ rh.business }}</span>
+                      <sc-if value="{{ rh.hasLooking }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block;font-size:13px;color:#38393b;margin-top:1px">{{ rh.looking }}</span>
+                      </sc-if>
+                      <span style="display:block;font-size:12px;color:#9a9c9f;margin-top:1px">{{ rh.meta }}</span>
+                      <sc-if value="{{ rh.hasReason }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block;font-size:12px;color:#4a4c4f;margin-top:2px">{{ rh.reason }}</span>
+                      </sc-if>
+                      <sc-if value="{{ rh.hasThanks }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block;font-size:12px;color:#6b6d70;margin-top:2px">{{ rh.thanks }}</span>
+                      </sc-if>
+                    </span>
+                    <span style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                      <span style="padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ rh.bg }};color:{{ rh.fg }}">{{ rh.state }}</span>
+                      <sc-if value="{{ rh.hasLink }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" onClick="{{ rh.onOpen }}" style="min-height:44px;padding:0 8px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:13px;font-weight:600;cursor:pointer">Facebook post</button>
+                      </sc-if>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
         <sc-if value="{{ isForMe }}" hint-placeholder-val="{{ false }}">
           <sc-for list="{{ reviewCards }}" as="rc" hint-placeholder-count="1">
             <div style="background:#fff;border:1px solid oklch(0.87 0.07 85);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:10px">
@@ -423,6 +464,12 @@
                 <div style="font-size:13px;color:#6b6d70">{{ rc.submittedBy }} &middot; {{ rc.location }}</div>
                 <div style="font-size:12px;color:#9a9c9f">{{ rc.groupName }} &middot; {{ rc.dateLabel }}</div>
               </div>
+              <sc-if value="{{ rc.hasLooking }}" hint-placeholder-val="{{ true }}">
+                <div style="background:oklch(0.97 0.02 262);border:1px solid oklch(0.9 0.04 262);border-radius:11px;padding:8px 10px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:oklch(0.45 0.14 262);margin-bottom:2px">Looking for</div>
+                  <p style="margin:0;font-size:14px;color:#1c1d1f;line-height:1.45">{{ rc.looking }}</p>
+                </div>
+              </sc-if>
               <sc-if value="{{ rc.hasNote }}" hint-placeholder-val="{{ true }}">
                 <div style="background:#faf9f7;border-radius:11px;padding:9px 11px">
                   <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f;margin-bottom:3px">Private note to you</div>
@@ -503,12 +550,12 @@
     </sc-if>
 
     <sc-if value="{{ isSubmit }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;flex-direction:column;gap:15px">
+      <div style="display:flex;flex-direction:column;gap:11px">
         <div>
-          <h1 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.025em">Submit an opportunity</h1>
-          <p style="margin:3px 0 0;color:#6b6d70;font-size:14px">A Facebook post where a Rockstar can be recommended.</p>
+          <h1 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.025em">Submit an opportunity</h1>
+          <p style="margin:2px 0 0;color:#6b6d70;font-size:13px">A Facebook post where a Rockstar can be recommended.</p>
         </div>
-        <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:11px">
+        <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
           <div>
             <label for="tr-benef" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Who is this opportunity for?</label>
             <select id="tr-benef" value="{{ formBeneficiary }}" onChange="{{ onFormBeneficiary }}" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f">
@@ -516,34 +563,19 @@
                 <option value="{{ mo.value }}">{{ mo.label }}</option>
               </sc-for>
             </select>
-            <p style="margin:4px 0 0;font-size:11.5px;color:#9a9c9f">They get the tag credit. You get credit for finding the post.</p>
-            <div style="margin-top:8px;background:#faf9f7;border:1px solid #e6e5e2;border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:6px">
+            <div style="margin-top:7px;background:#faf9f7;border:1px solid #e6e5e2;border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:6px">
               <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">{{ fitTitle }}</div>
               <sc-if value="{{ fitPrefsEmpty }}" hint-placeholder-val="{{ false }}">
                 <p style="margin:0;font-size:13px;color:#6b6d70">This business has not set tag preferences yet. Check with the owner if you are unsure whether the post fits.</p>
               </sc-if>
               <sc-if value="{{ fitHasPrefs }}" hint-placeholder-val="{{ true }}">
-                <div style="display:flex;flex-direction:column;gap:5px">
-                  <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:12.5px">
-                    <span style="color:#9a9c9f">Preferred tags</span>
-                    <span style="color:#1c1d1f">{{ fitWantsShown }}</span>
-                  </div>
-                  <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:12.5px">
-                    <span style="color:#9a9c9f">Service area</span>
-                    <span style="color:#1c1d1f">{{ fitRadius }}</span>
-                  </div>
-                  <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:12.5px">
-                    <span style="color:#9a9c9f">Desired areas</span>
-                    <span style="color:#1c1d1f">{{ fitPreferredShown }}</span>
-                  </div>
-                  <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:12.5px">
-                    <span style="color:#9a9c9f">Too far</span>
-                    <span style="color:#1c1d1f">{{ fitAvoidShown }}</span>
-                  </div>
-                  <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:12.5px">
-                    <span style="color:#9a9c9f">Do not want</span>
-                    <span style="color:#1c1d1f">{{ fitNotWantsShown }}</span>
-                  </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <sc-for list="{{ fitRows }}" as="fr" hint-placeholder-count="3">
+                    <div style="display:grid;grid-template-columns:62px 1fr;gap:8px;font-size:12.5px;line-height:1.4">
+                      <span style="color:#9a9c9f">{{ fr.label }}</span>
+                      <span style="color:#1c1d1f">{{ fr.value }}</span>
+                    </div>
+                  </sc-for>
                 </div>
               </sc-if>
               <button type="button" onClick="{{ onViewFullPrefs }}" style="align-self:flex-start;min-height:34px;padding:0;background:none;border:none;color:oklch(0.52 0.16 262);font-size:12.5px;font-weight:600;cursor:pointer">View full preferences</button>
@@ -554,19 +586,25 @@
             <input id="tr-url" type="url" inputmode="url" value="{{ formUrl }}" onChange="{{ onFormUrl }}" placeholder="https://www.facebook.com/groups/..." style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
           </div>
           <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px">
+              <label for="tr-look" style="font-size:12px;font-weight:600;color:#4a4c4f">What are they looking for?</label>
+              <span style="font-size:11px;color:#9a9c9f">{{ formNotesCount }}</span>
+            </div>
+            <textarea id="tr-look" rows="2" value="{{ formNotes }}" onChange="{{ onFormNotes }}" placeholder="Looking for a local weight-loss provider that offers semaglutide." style="width:100%;max-width:300px;padding:9px 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.45"></textarea>
+            <p style="margin:3px 0 0;font-size:11.5px;color:#9a9c9f">Briefly describe what the person is asking for so Rockstars know how to respond.</p>
+          </div>
+          <div>
             <label for="tr-group" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Facebook group name <span style="font-weight:400;color:#9a9c9f">&mdash; recommended</span></label>
             <input id="tr-group" type="text" value="{{ formGroup }}" onChange="{{ onFormGroup }}" placeholder="e.g. East Valley Neighbors" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
           </div>
           <div>
             <label for="tr-loc" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Post location <span style="font-weight:400;color:#9a9c9f">&mdash; city or county</span></label>
             <input id="tr-loc" type="text" value="{{ formLocation }}" onChange="{{ onFormLocation }}" placeholder="e.g. Chandler, AZ" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
-            <p style="margin:4px 0 0;font-size:11.5px;color:#9a9c9f">Used to check the business&rsquo;s service area.</p>
           </div>
           <sc-if value="{{ canSendForReview }}" hint-placeholder-val="{{ true }}">
-            <div style="border-top:1px solid #e6e5e2;padding-top:11px;display:flex;flex-direction:column;gap:8px">
+            <div style="border-top:1px solid #e6e5e2;padding-top:10px;display:flex;flex-direction:column;gap:7px">
               <div>
               <div style="font-size:13px;font-weight:600">Would you like the business owner to review this before it posts?</div>
-              <p style="margin:2px 0 0;font-size:11.5px;color:#9a9c9f">Posting now makes it available to the whole team immediately.</p>
             </div>
             <button type="button" onClick="{{ onToggleReview }}" role="switch" aria-checked="{{ reviewToggleState }}" style="display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:0 13px;border:1px solid #d9d8d4;border-radius:12px;background:#fff;cursor:pointer;text-align:left" style-hover="background:#faf9f7">
               <span style="flex:1;min-width:0;font-size:14px;font-weight:600;color:#1c1d1f">Send to the business owner first</span>
@@ -753,6 +791,13 @@
           <input type="search" aria-label="Search saved comments" value="{{ cSearch }}" onChange="{{ onCSearch }}" placeholder="Search business, label, text" style="flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
           <button type="button" onClick="{{ onNewComment }}" style="flex:none;min-height:48px;padding:0 14px;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Add</button>
         </div>
+        <sc-if value="{{ hasCFilters }}" hint-placeholder-val="{{ false }}">
+          <div role="group" aria-label="Filter saved comments by business" data-hscroll="" style="display:flex;gap:6px;overflow-x:auto">
+            <sc-for list="{{ cFilters }}" as="cfl" hint-placeholder-count="3">
+              <button type="button" onClick="{{ cfl.onClick }}" aria-pressed="{{ cfl.active }}" style="flex:none;min-height:44px;padding:0 12px;border:1px solid {{ cfl.border }};border-radius:22px;background:{{ cfl.bg }};color:{{ cfl.fg }};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">{{ cfl.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
         <sc-if value="{{ noComments }}" hint-placeholder-val="{{ false }}">
           <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:28px 18px;text-align:center">
             <div style="font-size:15px;font-weight:600;margin-bottom:4px">{{ commentsEmptyTitle }}</div>
@@ -1311,6 +1356,9 @@
                   </span>
                   <span style="flex:none;padding:4px 8px;border-radius:11px;font-size:11px;font-weight:700;background:{{ ao.stateBg }};color:{{ ao.stateFg }}">{{ ao.stateLabel }}</span>
                 </div>
+                <sc-if value="{{ ao.hasLooking }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12px;color:#1c1d1f;background:oklch(0.97 0.02 262);border-radius:11px;padding:7px 9px">{{ ao.looking }}</div>
+                </sc-if>
                 <div style="font-size:11.5px;color:#6b6d70;background:#f6f5f2;border-radius:11px;padding:7px 9px">{{ ao.counts }}</div>
                 <sc-if value="{{ ao.hasReview }}" hint-placeholder-val="{{ false }}">
                   <div style="font-size:11.5px;color:#4a4c4f;background:#f6f5f2;border-radius:11px;padding:7px 9px">{{ ao.reviewLine }}</div>
@@ -1970,7 +2018,7 @@ class Component extends DCLogic {
       bizForm: null, bizError: '', expandedBiz: null, basicsOpen: false, avatarDraft: null,
       groupSearch: '', groupFilter: 'all', groupCat: '', groupLoc: '', groupsShown: 12, groupFiltersOpen: false,
       gForm: null, gError: '', groupStatusFor: null,
-      menuOpen: false, sheet: null, sheetOtherText: '', cs: null, confirm: null, toast: '', copied: '', clockOffset: 0
+      menuOpen: false, cBiz: '', sheet: null, sheetOtherText: '', cs: null, confirm: null, toast: '', copied: '', clockOffset: 0
     };
   }
 
@@ -2129,7 +2177,8 @@ class Component extends DCLogic {
           id, beneficiaryId: +b.beneficiaryId || meId, businessId: b.businessId || null,
           businessDisplayName: b.businessDisplayName || '', submittedById: meId,
           facebookUrl: b.facebookUrl || '', facebookGroupName: b.facebookGroupName || '',
-          location: b.location || '', status: b.sendForReview ? 'pending_review' : 'active',
+          location: b.location || '', notes: (b.notes || '').slice(0, 300),
+          status: b.sendForReview ? 'pending_review' : 'active',
           reviewNote: b.reviewNote || '', reviewedById: null, reviewedAt: null,
           declineReason: '', createdAt: now, archivedAt: null
         });
@@ -3175,7 +3224,7 @@ class Component extends DCLogic {
 
     // -- opportunities posted for my own business (owner control) --
     const myBizCards = db.opportunities
-      .filter(o => o.beneficiaryId === me.id && (o.status || 'active') !== 'pending_review')
+      .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'active')
       .filter(o => !q || [o.notes, o.facebookGroupName, o.location].join(' ').toLowerCase().indexOf(q) > -1)
       .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt))
       .map(o => {
@@ -3210,6 +3259,48 @@ class Component extends DCLogic {
         };
       });
 
+    // -- finished review outcomes: shown under Done, never in For Review --
+    const reviewHistory = db.opportunities
+      .filter(o => {
+        const stt = o.status || 'active';
+        const mine = o.submittedById === me.id;
+        const ownedDecline = o.beneficiaryId === me.id && stt === 'declined';
+        // Approved posts I found, declined posts I found, and posts for my own
+        // business that I declined. An approved post stays Open for everyone
+        // else — this list is only the review outcome, not the tagging state.
+        return (mine && (stt === 'declined' || (stt === 'active' && o.reviewedById))) || ownedDecline;
+      })
+      .sort((p, n) => Date.parse(n.reviewedAt || n.createdAt) - Date.parse(p.reviewedAt || p.createdAt))
+      .slice(0, 12)
+      .map(o => {
+        const declined = (o.status || 'active') === 'declined';
+        const sub = this.member(o.submittedById);
+        const rev = o.reviewedById ? this.member(o.reviewedById) : null;
+        const mine = o.submittedById === me.id;
+        return {
+          business: o.businessDisplayName,
+          hasLooking: !!o.notes,
+          looking: o.notes ? 'Looking for: ' + o.notes : '',
+          meta: [
+            (o.facebookGroupName || 'No group recorded'),
+            'Found by ' + (mine ? 'you' : (sub ? sub.fullName.split(' ')[0] : 'a former member')),
+            'Reviewed ' + this.fmt(o.reviewedAt || o.createdAt)
+          ].join(' \u00b7 '),
+          state: declined ? 'Not approved' : 'Approved',
+          hasReason: true,
+          reason: declined
+            ? 'Reason: ' + (o.declineReason || 'No reason given')
+            : 'Now live in Opportunities',
+          hasThanks: declined && mine,
+          thanks: 'Thank you for finding and submitting this opportunity.',
+          bg: declined ? '#f0efec' : 'oklch(0.95 0.05 155)',
+          fg: declined ? '#4a4c4f' : 'oklch(0.38 0.1 155)',
+          hasLink: !!o.facebookUrl && !declined,
+          onOpen: () => this.openExternal(o.facebookUrl),
+          reviewer: rev ? rev.fullName : ''
+        };
+      });
+
     // -- opportunities awaiting my approval as the business owner --
     const reviewCards = db.opportunities
       .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'pending_review')
@@ -3221,6 +3312,8 @@ class Component extends DCLogic {
           submittedBy: 'Found by ' + (sub ? sub.fullName : 'a removed member'),
           location: o.location || 'Not recorded',
           groupName: o.facebookGroupName || 'No group recorded',
+          hasLooking: !!o.notes,
+          looking: o.notes || '',
           dateLabel: this.fmt(o.createdAt) + ' \u00b7 ' + this.ago(o.createdAt),
           note: o.reviewNote || '',
           hasNote: !!o.reviewNote,
@@ -3237,8 +3330,7 @@ class Component extends DCLogic {
 
     // -- review status of posts I submitted --
     const myReviewStatus = db.opportunities
-      .filter(o => o.submittedById === me.id
-        && (o.status === 'pending_review' || o.status === 'declined' || (o.status === 'active' && o.reviewedById)))
+      .filter(o => o.submittedById === me.id && o.status === 'pending_review')
       .sort((p, n) => Date.parse(n.reviewedAt || n.createdAt) - Date.parse(p.reviewedAt || p.createdAt))
       .slice(0, 4)
       .map(o => {
@@ -3314,7 +3406,9 @@ class Component extends DCLogic {
 
     // -- comments --
     const cq = st.cSearch.trim().toLowerCase();
-    const mineComments = db.comments.filter(c => c.memberId === me.id).filter(c => {
+    const mineComments = db.comments.filter(c => c.memberId === me.id)
+      .filter(c => !st.cBiz || String(c.businessMemberId) === String(st.cBiz))
+      .filter(c => {
       if (!cq) return true;
       const b = this.member(c.businessMemberId);
       return [c.label, c.text, b ? b.businessName : '', b ? b.businessOwnerName : ''].join(' ').toLowerCase().indexOf(cq) > -1;
@@ -3339,7 +3433,7 @@ class Component extends DCLogic {
           }),
           onDelete: () => this.setState({
             confirm: {
-              title: 'Delete this comment?',
+              title: 'Delete this saved comment?',
               body: 'Your saved comment for ' + (b ? b.businessName : 'this business') + ' will be removed. This cannot be undone.',
               label: 'Delete',
               ok: () => {
@@ -3570,6 +3664,10 @@ class Component extends DCLogic {
         this.setState({ formError: 'That does not look like a Facebook post link. It should start with https://www.facebook.com/', formDupe: '' });
         return;
       }
+      if (!(f.notes || '').trim()) {
+        this.setState({ formError: 'Tell the team what this person is looking for.', formDupe: '' });
+        return;
+      }
       const dupe = db.opportunities.find(o => !o.archivedAt && o.facebookUrl.replace(/\/$/, '') === url.replace(/\/$/, ''));
       if (dupe && !force) {
         const who = this.member(dupe.submittedById);
@@ -3600,6 +3698,7 @@ class Component extends DCLogic {
         facebookUrl: f.url,
         facebookGroupName: f.group,
         location: f.location,
+        notes: (f.notes || '').trim().slice(0, 300),
         sendForReview: forReview,
         reviewNote: f.reviewNote || '',
         force: !!force
@@ -3629,6 +3728,12 @@ class Component extends DCLogic {
       isGroups: st.screen === 'groups',
       isMembers: st.screen === 'members',
       fitTitle: (benMember ? benMember.businessName : 'Business') + ' preferences',
+      fitRows: [
+        { label: 'Preferred', value: benPrefs.wants.join(', ') },
+        { label: 'Area', value: this.hasPrefs(benPrefsId) ? this.radiusLabel(benPrefs) : '' },
+        { label: 'Cities', value: benPrefs.preferred.join(', ') },
+        { label: 'Avoid', value: [].concat(benPrefs.avoid, benPrefs.notWants).join(', ') }
+      ].filter(r2 => r2.value && r2.value !== 'No geographic restriction'),
       fitWantsShown: benPrefs.wants.length ? benPrefs.wants.join(', ') : 'None listed',
       fitNotWantsShown: benPrefs.notWants.length ? benPrefs.notWants.join(', ') : 'None listed',
       fitAvoidShown: benPrefs.avoid.length ? benPrefs.avoid.join(', ') : 'None',
@@ -3803,8 +3908,14 @@ class Component extends DCLogic {
       myBizCards,
       reviewCards, hasReviewCards: reviewCards.length > 0,
       myReviewStatus, hasMyReviewStatus: myReviewStatus.length > 0 && st.oppTab === 'forme',
+      reviewHistory, hasReviewHistory: reviewHistory.length > 0 && st.oppTab === 'completed',
       pendingShares, hasPendingShares: pendingShares.length > 0,
       declinedShares, hasDeclinedShares: declinedShares.length > 0 && st.oppTab === 'open',
+      onMySavedComments: () => this.setState({ screen: 'comments', cBiz: '', cSearch: '', menuOpen: false }),
+      savedCommentCount: (() => {
+        const n2 = db.comments.filter(c => c.memberId === me.id).length;
+        return n2 === 1 ? '1 saved' : n2 + ' saved';
+      })(),
       oppSearch: st.oppSearch, onOppSearch: e => this.setState({ oppSearch: e.target.value }),
       oppMember: st.oppMember, onOppMember: e => this.setState({ oppMember: e.target.value }),
       oppSort: st.oppSort, onOppSort: e => this.setState({ oppSort: e.target.value }),
@@ -3839,7 +3950,9 @@ class Component extends DCLogic {
       onFormBusiness: e => setForm('business', e.target.value),
       formUrl: st.form.url, onFormUrl: e => setForm('url', e.target.value),
       formGroup: st.form.group, onFormGroup: e => setForm('group', e.target.value),
-      formNotes: st.form.notes, onFormNotes: e => setForm('notes', e.target.value),
+      formNotes: st.form.notes,
+      onFormNotes: e => setForm('notes', e.target.value.slice(0, 300)),
+      formNotesCount: (st.form.notes || '').length + ' / 300',
       formError: st.formError, formDupe: st.formDupe,
       formLocation: st.form.location,
       onFormLocation: e => setForm('location', e.target.value),
@@ -3894,6 +4007,25 @@ class Component extends DCLogic {
 
       // comments
       cSearch: st.cSearch, onCSearch: e => this.setState({ cSearch: e.target.value }),
+      cFilters: [{ id: '', label: 'All' }].concat(
+        // Only businesses this member has actually saved a comment for.
+        Array.from(new Set(db.comments.filter(c => c.memberId === me.id).map(c => c.businessMemberId)))
+          .map(id2 => {
+            const b2 = this.member(id2);
+            return { id: String(id2), label: b2 ? b2.businessName : 'Former member' };
+          })
+          .sort((p, n) => p.label.localeCompare(n.label))
+      ).map(f2 => {
+        const on = String(st.cBiz || '') === f2.id;
+        return {
+          label: f2.label, active: on ? 'true' : 'false',
+          bg: on ? 'oklch(0.52 0.16 262)' : '#fff',
+          fg: on ? '#fff' : '#4a4c4f',
+          border: on ? 'oklch(0.52 0.16 262)' : '#d9d8d4',
+          onClick: () => this.setState({ cBiz: f2.id })
+        };
+      }),
+      hasCFilters: db.comments.filter(c => c.memberId === me.id).length > 1,
       commentGroups, noComments: commentGroups.length === 0,
       commentsEmptyTitle: cq ? 'No comments match that search' : 'No saved comments yet',
       commentsEmptyBody: cq
@@ -3926,7 +4058,7 @@ class Component extends DCLogic {
         this.send('/api/comments', {
           id: cf.id || undefined, businessMemberId: +cf.businessId,
           label: cf.label, text: cf.text
-        }, 'Comment saved')
+        }, cf.id ? 'Saved comment updated.' : 'Saved comment added.')
           .then(done => {
             if (done) this.setState({ screen: 'comments', cf: { id: null, businessId: '', label: '', text: '' }, cfError: '' });
           });
@@ -4351,6 +4483,8 @@ class Component extends DCLogic {
           return {
             business: o.businessDisplayName,
             meta: (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 ' + this.fmt(o.createdAt) + ' \u00b7 ' + (o.facebookGroupName || 'No group'),
+            hasLooking: !!o.notes,
+            looking: o.notes ? 'Looking for: ' + o.notes : '',
             hasReview: !!o.reviewedById,
             reviewLine: o.reviewedById
               ? (o.status === 'declined' ? 'Declined & archived' : 'Approved')
