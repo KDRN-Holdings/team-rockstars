@@ -451,6 +451,9 @@
                       <sc-if value="{{ mr.hasReason }}" hint-placeholder-val="{{ false }}">
                         <span style="display:block;font-size:12px;color:#4a4c4f;margin-top:2px">{{ mr.reason }}</span>
                       </sc-if>
+                      <sc-if value="{{ mr.hasThanks }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block;font-size:12px;color:#6b6d70;margin-top:2px">{{ mr.thanks }}</span>
+                      </sc-if>
                     </span>
                     <span style="flex:none;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;background:{{ mr.bg }};color:{{ mr.fg }};max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ mr.state }}</span>
                   </div>
@@ -2660,7 +2663,7 @@ class Component extends DCLogic {
   declineReview(oppId, reason) {
     this.send('/api/opportunities/review',
       { opportunityId: oppId, decision: 'decline', reason: reason || '' },
-      'Archived \u2014 the member who found it has been thanked.')
+      'Opportunity archived.')
       .then(() => this.setState({ declineFor: null, reviewDeclineFor: null, declineChoice: '', declineOtherText: '' }));
   }
 
@@ -2837,7 +2840,7 @@ class Component extends DCLogic {
   respondShare() { /* removed from the product */ }
   ownerDecline(oppId, reason) {
     this.send('/api/opportunities/review',
-      { opportunityId: oppId, decision: 'decline', reason: reason || '' }, 'Removed from active tagging')
+      { opportunityId: oppId, decision: 'decline', reason: reason || '' }, 'Opportunity archived.')
       .then(() => this.setState({ declineFor: null, declineReason: '', declineChoice: '', declineOtherText: '' }));
   }
 
@@ -3250,6 +3253,8 @@ class Component extends DCLogic {
           reason: pending ? ''
             : declined ? 'Reason: ' + (o.declineReason || 'No reason given')
             : 'Now live in Opportunities',
+          hasThanks: declined,
+          thanks: 'Thank you for finding and submitting this opportunity.',
           bg: pending ? 'oklch(0.96 0.04 70)' : declined ? '#f0efec' : 'oklch(0.95 0.05 155)',
           fg: pending ? 'oklch(0.42 0.11 70)' : declined ? '#4a4c4f' : 'oklch(0.38 0.1 155)',
           when: this.ago(o.createdAt)
@@ -4622,14 +4627,9 @@ class Component extends DCLogic {
       onClosePrefs: () => this.setState({ prefsSheet: null }),
 
       declineOpen: !!(st.declineFor || st.reviewDeclineFor),
-      declineTitle: st.reviewDeclineFor ? 'Why isn\u2019t this opportunity a good fit?' : 'Why is this not a fit?',
-      declineBody: st.reviewDeclineFor
-        ? 'The reason is optional. The post is archived either way, and the member who found it is thanked and shown your reason.'
-        : 'Optional. The post is removed from active tagging either way, and the member who found it will see that you declined.',
-      declineOptions: (st.reviewDeclineFor
-        ? REVIEW_DECLINE_REASONS
-        : ['Location is too far', 'Not a service I provide', 'Wrong type of tag', 'Already handled', 'Not relevant', 'Other']
-      ).map(r => {
+      declineTitle: 'Why isn\u2019t this opportunity a good fit?',
+      declineBody: 'The reason is optional. The post is archived either way, and the member who found it is thanked and shown your reason.',
+      declineOptions: REVIEW_DECLINE_REASONS.map(r => {
         const sel = st.declineChoice === r;
         return {
           label: r, pressed: sel ? 'true' : 'false',
@@ -4642,7 +4642,7 @@ class Component extends DCLogic {
       declineOtherText: st.declineOtherText,
       onDeclineOtherText: e => this.setState({ declineOtherText: e.target.value }),
       declineBusy: !!st.busy,
-      declineConfirmLabel: st.reviewDeclineFor ? 'Archive opportunity' : 'Decline this post',
+      declineConfirmLabel: 'Archive opportunity',
       onConfirmDecline: () => {
         const choice = st.declineChoice;
         const extra = (st.declineOtherText || '').trim();
