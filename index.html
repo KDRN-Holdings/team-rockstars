@@ -39,104 +39,63 @@
 </sc-if>
 
 <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}">
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px 24px 40px">
-    <div style="width:100%;max-width:352px;display:flex;flex-direction:column;gap:26px">
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px 40px;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:100%;max-width:352px">
       <div style="display:flex;align-items:center;gap:9px">
-        <span style="width:34px;height:34px;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1">&#9733;</span>
-        <span style="font-family:'Instrument Sans',sans-serif;font-size:23px;font-weight:700;letter-spacing:-0.03em">Team Rockstars</span>
+        <span style="width:34px;height:34px;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1">&#9733;</span>
+        <span style="font-family:'Instrument Sans',sans-serif;font-size:21px;font-weight:700;letter-spacing:-0.03em">Team Rockstars</span>
       </div>
       <p style="margin:0;color:#6b6d70;font-size:14px">Members-only networking group portal.</p>
     </div>
 
-    <sc-if value="{{ loadError }}" hint-placeholder-val="{{ false }}">
-      <div role="alert" style="background:oklch(0.97 0.03 25);border:1px solid oklch(0.86 0.06 25);border-radius:12px;padding:13px 14px;font-size:14px;color:oklch(0.42 0.15 25)">{{ loadError }}</div>
-    </sc-if>
-
     <sc-if value="{{ notConfigured }}" hint-placeholder-val="{{ false }}">
-      <div role="alert" style="background:oklch(0.97 0.04 70);border:1px solid oklch(0.88 0.07 70);border-radius:14px;padding:12px 13px">
+      <div role="alert" style="width:100%;max-width:352px;background:oklch(0.97 0.04 70);border:1px solid oklch(0.88 0.07 70);border-radius:14px;padding:12px 13px">
         <div style="font-size:13px;font-weight:700;color:oklch(0.38 0.11 70);margin-bottom:3px">Not connected to the server</div>
-        <p style="margin:0;font-size:12.5px;color:oklch(0.42 0.09 70);line-height:1.45">Login and password reset are unavailable until setup is finished. {{ configHint }}</p>
+        <p style="margin:0;font-size:12.5px;color:oklch(0.42 0.09 70);line-height:1.45">Sign-in is unavailable until setup is finished. {{ configHint }}</p>
       </div>
     </sc-if>
 
-    <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <h1 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.025em">Choose your password</h1>
-        <sc-if value="{{ resetDone }}" hint-placeholder-val="{{ false }}">
-          <div style="background:oklch(0.96 0.03 155);border:1px solid oklch(0.85 0.06 155);border-radius:12px;padding:14px;font-size:14px;color:oklch(0.38 0.09 155)">
-            <strong style="display:block;margin-bottom:4px">Password saved</strong>
-            <span>You can now log in with your new password.</span>
-          </div>
-        </sc-if>
-        <sc-if value="{{ resetNotDone }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <p style="margin:0;font-size:14px;color:#6b6d70">Pick something at least 10 characters long. This link works once and expires 60 minutes after it was sent.</p>
-            <div>
-              <label for="tr-np" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">New password</label>
-              <input id="tr-np" type="password" autocomplete="new-password" value="{{ resetPassword }}" onChange="{{ onResetPassword }}" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
-            </div>
-            <div>
-              <label for="tr-np2" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Confirm password</label>
-              <input id="tr-np2" type="password" autocomplete="new-password" value="{{ resetPassword2 }}" onChange="{{ onResetPassword2 }}" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
-            </div>
-            <sc-if value="{{ resetError }}" hint-placeholder-val="{{ false }}">
-              <p role="alert" style="margin:0;font-size:13px;color:oklch(0.5 0.17 25)">{{ resetError }}</p>
-            </sc-if>
-            <button type="button" onClick="{{ onSaveNewPassword }}" style="display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">{{ resetLabel }}</button>
-          </div>
-        </sc-if>
-        <button type="button" onClick="{{ onBackToLogin }}" style="min-height:48px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:14px;font-weight:600;cursor:pointer;align-self:flex-start;padding:0">Back to login</button>
-      </div>
+    <sc-if value="{{ loadError }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="width:100%;max-width:352px;background:oklch(0.97 0.03 25);border:1px solid oklch(0.86 0.06 25);border-radius:12px;padding:13px 14px;font-size:14px;color:oklch(0.42 0.15 25)">{{ loadError }}</div>
     </sc-if>
 
-    <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <h1 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.025em">Set your password</h1>
-        <sc-if value="{{ resetSent }}" hint-placeholder-val="{{ false }}">
-          <div style="background:oklch(0.96 0.03 155);border:1px solid oklch(0.85 0.06 155);border-radius:12px;padding:14px;font-size:14px;color:oklch(0.38 0.09 155)">
-            <strong style="display:block;margin-bottom:4px">Check your email</strong>
-            <span>If an account exists for {{ resetEmail }}, a password reset link has been sent. It expires in 60 minutes. Check your spam folder if it does not arrive.</span>
-          </div>
-        </sc-if>
-        <sc-if value="{{ resetNotSent }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <p style="margin:0;font-size:14px;color:#6b6d70">Enter the email address your administrator added to Team Rockstars. You will get a link to create or reset your password.</p>
-            <div>
-              <label for="tr-fe" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Email address</label>
-              <input id="tr-fe" type="email" autocomplete="email" value="{{ forgotEmail }}" onChange="{{ onForgotEmail }}" placeholder="you@yourbusiness.com" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
-            </div>
-            <sc-if value="{{ forgotError }}" hint-placeholder-val="{{ false }}">
-              <p role="alert" style="margin:0;font-size:13px;color:oklch(0.5 0.17 25)">{{ forgotError }}</p>
-            </sc-if>
-            <button type="button" onClick="{{ onSendReset }}" style="display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">{{ forgotLabel }}</button>
-          </div>
-        </sc-if>
-        <button type="button" onClick="{{ onBackToLogin }}" style="min-height:48px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:14px;font-weight:600;cursor:pointer;align-self:flex-start;padding:0">Back to login</button>
-      </div>
-    </sc-if>
-
-    <sc-if value="{{ isLoginForm }}" hint-placeholder-val="{{ true }}">
-      <div style="display:flex;flex-direction:column;gap:14px">
+    <sc-if value="{{ isEmailStep }}" hint-placeholder-val="{{ true }}">
+      <div style="width:100%;max-width:352px;display:flex;flex-direction:column;gap:14px">
         <div>
           <label for="tr-em" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Email address</label>
-          <input id="tr-em" type="email" autocomplete="email" value="{{ loginEmail }}" onChange="{{ onLoginEmail }}" placeholder="you@yourbusiness.com" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
-        </div>
-        <div>
-          <label for="tr-pw" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Password</label>
-          <input id="tr-pw" type="password" autocomplete="current-password" value="{{ loginPassword }}" onChange="{{ onLoginPassword }}" onKeyDown="{{ onLoginKey }}" placeholder="Your password" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
+          <input id="tr-em" type="email" autocomplete="email" inputmode="email" value="{{ loginEmail }}" onChange="{{ onLoginEmail }}" onKeyDown="{{ onEmailKey }}" placeholder="you@yourbusiness.com" style="width:100%;min-height:50px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
         </div>
         <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
           <p role="alert" style="margin:0;font-size:13px;color:oklch(0.5 0.17 25)">{{ loginError }}</p>
         </sc-if>
-        <button type="button" onClick="{{ onLogin }}" style="display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">{{ loginLabel }}</button>
-        <button type="button" onClick="{{ onForgot }}" style="min-height:48px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:14px;font-weight:600;cursor:pointer;align-self:center;padding:0">Forgot password</button>
-        <div style="background:oklch(0.96 0.025 262);border:1px solid oklch(0.86 0.055 262);border-radius:12px;padding:13px 14px;font-size:14px;color:oklch(0.36 0.1 262)">
-          <strong style="font-weight:700">First time logging in?</strong> Select &ldquo;Forgot password&rdquo; to create your password. There is no public sign-up &mdash; an administrator adds your email first.
+        <button type="button" onClick="{{ onSendCode }}" style="display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">{{ sendCodeLabel }}</button>
+        <p style="margin:0;font-size:13px;color:#6b6d70;line-height:1.5">No password needed. We email you a 6-digit code that signs you in.</p>
+        <div style="background:oklch(0.96 0.025 262);border:1px solid oklch(0.88 0.05 262);border-radius:12px;padding:13px 14px;font-size:14px;color:oklch(0.36 0.1 262)">
+          <strong style="font-weight:700">New to Team Rockstars?</strong> There is no public sign-up. An administrator adds your email first, then you can request a code.
         </div>
       </div>
     </sc-if>
-    </div>
+
+    <sc-if value="{{ isCodeStep }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;max-width:352px;display:flex;flex-direction:column;gap:14px">
+        <div style="background:oklch(0.96 0.03 155);border:1px solid oklch(0.85 0.06 155);border-radius:12px;padding:13px 14px;font-size:14px;color:oklch(0.38 0.09 155)">
+          If this email belongs to an active Team Rockstars member, a login code has been sent.
+        </div>
+        <div>
+          <label for="tr-code" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">6-digit login code</label>
+          <input id="tr-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{ codeValue }}" onChange="{{ onCodeChange }}" onKeyDown="{{ onCodeKey }}" placeholder="000000" style="width:100%;min-height:56px;padding:0 16px;border:1px solid #d9d8d4;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:26px;font-weight:700;letter-spacing:0.22em;text-align:center;background:#fff;color:#1c1d1f" />
+          <p style="margin:6px 0 0;font-size:12px;color:#9a9c9f">Sent to {{ codeEmail }} &middot; expires in 10 minutes</p>
+        </div>
+        <sc-if value="{{ codeError }}" hint-placeholder-val="{{ false }}">
+          <p role="alert" style="margin:0;font-size:13px;color:oklch(0.5 0.17 25)">{{ codeError }}</p>
+        </sc-if>
+        <button type="button" onClick="{{ onVerifyCode }}" style="display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">{{ verifyLabel }}</button>
+        <div style="display:flex;gap:14px;align-items:center">
+          <button type="button" onClick="{{ onResendCode }}" style="min-height:44px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:14px;font-weight:600;cursor:pointer;padding:0">{{ resendLabel }}</button>
+          <button type="button" onClick="{{ onChangeEmail }}" style="min-height:44px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:14px;font-weight:600;cursor:pointer;padding:0;color:#6b6d70">Use a different email</button>
+        </div>
+      </div>
+    </sc-if>
   </div>
 </sc-if>
 
@@ -1471,7 +1430,7 @@
                 <div>
                   <label for="tr-me" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Email address</label>
                   <input id="tr-me" type="email" value="{{ mfEmail }}" onChange="{{ onMfEmail }}" placeholder="member@business.com" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
-                  <p style="margin:6px 0 0;font-size:12px;color:#9a9c9f">They set their own password with Forgot password.</p>
+                  <p style="margin:6px 0 0;font-size:12px;color:#9a9c9f">They sign in with an emailed login code &mdash; no password to set.</p>
                   <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
                     <p style="margin:6px 0 0;font-size:12px;color:oklch(0.45 0.15 60)">This device is not connected to the server, so no invite email will be sent. Members added here exist on this device only.</p>
                   </sc-if>
@@ -1928,14 +1887,11 @@ class Component extends DCLogic {
   // Everything shared lives in Cloudflare D1 and arrives via /api/bootstrap.
   // localStorage is used only for device-local UI preferences (see uiPref).
   boot() {
-    const params = new URLSearchParams(location.search);
     return {
       db: this.emptyDb(), loading: true, loadError: '',
       screen: 'home', oppTab: 'open', oppSort: 'new', oppSearch: '', oppMember: '', expandedId: null, filtersOpen: false,
-      loginEmail: '', loginPassword: '', loginError: '', authView: params.get('reset') ? 'reset' : 'login',
-      busy: false,
-      resetToken: params.get('reset') || '', resetPassword: '', resetPassword2: '', resetError: '', resetDone: false,
-      forgotEmail: '', forgotError: '', resetSent: false, resetEmail: '',
+      loginEmail: '', loginError: '', authView: 'login', busy: false,
+      codeEmail: '', codeValue: '', codeError: '',
       form: { beneficiaryId: '', business: '', url: '', group: '', notes: '', type: 'Post', location: '', review: 'now', reviewNote: '' },
       formError: '', formDupe: '',
       cf: { id: null, businessId: '', label: '', text: '' }, cfError: '',
@@ -1962,6 +1918,26 @@ class Component extends DCLogic {
       leadership: { president: null, vicePresident: null, chapterTech: null, ambassador: null },
       settings: { monthlyTagGoal: 25, missedGraceHours: 72, inactiveThresholdDays: 7 }
     };
+  }
+
+  /**
+   * Session token store.
+   *
+   * The token must survive reloads, so it lives in localStorage. That is
+   * readable by any script on the page, unlike an HttpOnly cookie — the
+   * trade-off accepted here because pages.dev → workers.dev is cross-site and
+   * Safari will not send a third-party cookie at all. The token is opaque, is
+   * only a pointer to a server-side D1 row, and is revoked on logout, on
+   * password reset, and on deactivation.
+   */
+  get token() {
+    try { return localStorage.getItem('tr-session') || ''; } catch (e) { return ''; }
+  }
+  setToken(value) {
+    try {
+      if (value) localStorage.setItem('tr-session', value);
+      else localStorage.removeItem('tr-session');
+    } catch (e) {}
   }
 
   /** Device-local UI preference only. Never application data. */
@@ -2324,10 +2300,16 @@ class Component extends DCLogic {
     }
     let res;
     try {
+      const headers = {};
+      if (body) headers['Content-Type'] = 'application/json';
+      // Primary session transport. Sent on every authenticated call, including
+      // /api/bootstrap, because the cross-site cookie cannot be relied upon.
+      const tok = this.token;
+      if (tok) headers.Authorization = 'Bearer ' + tok;
       res = await fetch(this.apiBase + path, {
         method: method || (body ? 'POST' : 'GET'),
         credentials: 'include',
-        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        headers,
         body: body ? JSON.stringify(body) : undefined
       });
     } catch (e) {
@@ -2335,7 +2317,11 @@ class Component extends DCLogic {
     }
     let data = {};
     try { data = await res.json(); } catch (e) {}
-    if (res.status === 401) { this._signedOut = true; }
+    if (res.status === 401) {
+      // Missing, expired, invalid, or belonging to a deactivated member.
+      this._signedOut = true;
+      this.setToken('');
+    }
     if (!res.ok || data.ok === false) throw new Error(data.error || ('Request failed (' + res.status + ')'));
     return data;
   }
@@ -2346,24 +2332,31 @@ class Component extends DCLogic {
     if (!this.configured) {
       if (this.demoMode) {
         this.setState({ db: this.normalize(this.localPayload()), loading: false, loadError: '' });
-      } else {
-        // Fail closed: no server means no session and no admin access.
-        this.setState({ db: this.emptyDb(), loading: false, loadError: 'config' });
+        return true;
       }
-      return;
+      // Fail closed: no server means no session and no admin access.
+      this.setState({ db: this.emptyDb(), loading: false, loadError: 'config' });
+      return false;
     }
     if (!quiet) this.setState({ loading: true });
     try {
       const { data } = await this.api('/api/bootstrap');
-      this.setState({ db: this.normalize(data), loading: false, loadError: '' });
+      const next = this.normalize(data);
+      this.setState({ db: next, loading: false, loadError: '' });
+      return !!next.sessionId;
     } catch (e) {
       // 401 simply means nobody is signed in — that is the login screen, not an error.
       const signedOut = this._signedOut;
       this._signedOut = false;
+      // A 401 while a session was in hand means it expired or was revoked.
+      const expired = signedOut && !!this.db.sessionId;
       this.setState({
         db: this.emptyDb(), loading: false,
-        loadError: signedOut ? '' : String(e.message || e)
+        loadError: signedOut ? '' : String(e.message || e),
+        loginError: expired ? 'Your session has expired. Please sign in again.' : this.state.loginError,
+        authView: expired ? 'login' : this.state.authView
       });
+      return false;
     }
   }
 
@@ -2452,10 +2445,12 @@ class Component extends DCLogic {
       this.flash('Log out needs the server \u2014 set API_BASE in config.js');
       return;
     }
+    // Server-side revocation first, then the local copy — cleared either way.
     try { await this.api('/api/auth/logout', {}); } catch (e) {}
+    this.setToken('');
     this.setState({
       menuOpen: false, screen: 'home', authView: 'login',
-      db: this.emptyDb(), loginEmail: '', loginPassword: '', loginError: ''
+      db: this.emptyDb(), loginEmail: '', loginError: '', codeValue: '', codeEmail: ''
     });
   }
 
@@ -2846,20 +2841,39 @@ class Component extends DCLogic {
     }
 
     if (!me) {
-      const isForgot = st.authView === 'forgot';
-      const isReset = st.authView === 'reset';
+      const emailOk = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(st.loginEmail.trim());
 
-      const tryLogin = async () => {
+      const sendCode = async () => {
         const email = st.loginEmail.trim().toLowerCase();
-        if (!email || !st.loginPassword) { this.setState({ loginError: 'Enter your email and password.' }); return; }
+        if (!emailOk) { this.setState({ loginError: 'Enter a valid email address.' }); return; }
         this.setState({ busy: true, loginError: '' });
         try {
-          // The Worker verifies the stored PBKDF2 hash. No client-side shortcut.
-          await this.api('/api/auth/login', { email, password: st.loginPassword });
-          this.setState({ loginPassword: '', loginError: '', busy: false, screen: 'home' });
-          await this.refresh();
-        } catch (e) {
-          this.setState({ busy: false, loginError: String(e.message || e) });
+          await this.api('/api/auth/request-code', { email });
+          this.setState({
+            busy: false, authView: 'code', codeEmail: email,
+            codeValue: '', codeError: '', loginError: ''
+          });
+        } catch (err) {
+          this.setState({ busy: false, loginError: String(err.message || err) });
+        }
+      };
+
+      const verify = async () => {
+        const digits = st.codeValue.replace(/\D/g, '');
+        if (digits.length !== 6) { this.setState({ codeError: 'Enter the 6-digit code from your email.' }); return; }
+        this.setState({ busy: true, codeError: '' });
+        try {
+          const res = await this.api('/api/auth/verify-code', { email: st.codeEmail, code: digits });
+          if (res && res.token) this.setToken(res.token);
+          // The code was right, but confirm the session actually carries.
+          const established = await this.refresh();
+          if (!established) {
+            this.setState({ busy: false, codeError: 'Unable to establish a secure session. Please try again.' });
+            return;
+          }
+          this.setState({ busy: false, codeValue: '', codeError: '', screen: 'home' });
+        } catch (err) {
+          this.setState({ busy: false, codeError: String(err.message || err) });
         }
       };
 
@@ -2869,62 +2883,25 @@ class Component extends DCLogic {
         configHint: 'Set API_BASE in config.js to your deployed Worker URL, then redeploy.',
         offline: this.demoMode,
         loadError: st.loadError && st.loadError !== 'config' ? st.loadError : '',
-        isForgot, isLoginForm: !isForgot && !isReset, isReset,
+        isEmailStep: st.authView !== 'code',
+        isCodeStep: st.authView === 'code',
         busy: st.busy,
-        loginEmail: st.loginEmail, loginPassword: st.loginPassword, loginError: st.loginError,
-        loginLabel: st.busy ? 'Signing in\u2026' : 'Log in',
-        onLoginEmail: e => this.setState({ loginEmail: e.target.value, loginError: '' }),
-        onLoginPassword: e => this.setState({ loginPassword: e.target.value, loginError: '' }),
-        onLoginKey: e => { if (e.key === 'Enter') tryLogin(); },
-        onLogin: tryLogin,
-        onForgot: () => this.setState({ authView: 'forgot', resetSent: false, forgotError: '', forgotEmail: st.loginEmail }),
-        onBackToLogin: () => {
-          history.replaceState(null, '', location.pathname);
-          this.setState({ authView: 'login', resetSent: false, resetDone: false, resetError: '' });
-        },
-        resetSent: st.resetSent, resetNotSent: !st.resetSent, resetEmail: st.resetEmail,
-        forgotEmail: st.forgotEmail, forgotError: st.forgotError,
-        forgotLabel: st.busy ? 'Sending\u2026' : 'Send password link',
-        onForgotEmail: e => this.setState({ forgotEmail: e.target.value, forgotError: '' }),
-        onSendReset: async () => {
-          const email = st.forgotEmail.trim().toLowerCase();
-          if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) {
-            this.setState({ forgotError: 'Enter a valid email address.' }); return;
-          }
-          this.setState({ busy: true, forgotError: '' });
-          try {
-            // Only shown after the backend accepts the request.
-            await this.api('/api/auth/forgot', { email });
-            this.setState({ busy: false, resetSent: true, resetEmail: email, forgotError: '' });
-          } catch (e) {
-            this.setState({ busy: false, forgotError: String(e.message || e) });
-          }
-        },
-
-        // ---- create / reset password (arrived from the emailed link) ----
-        resetPassword: st.resetPassword, resetPassword2: st.resetPassword2,
-        resetError: st.resetError, resetDone: st.resetDone, resetNotDone: !st.resetDone,
-        resetLabel: st.busy ? 'Saving\u2026' : 'Save password',
-        onResetPassword: e => this.setState({ resetPassword: e.target.value, resetError: '' }),
-        onResetPassword2: e => this.setState({ resetPassword2: e.target.value, resetError: '' }),
-        onSaveNewPassword: async () => {
-          if (st.resetPassword.length < 10) {
-            this.setState({ resetError: 'Choose a password of at least 10 characters.' }); return;
-          }
-          if (st.resetPassword !== st.resetPassword2) {
-            this.setState({ resetError: 'Those passwords do not match.' }); return;
-          }
-          this.setState({ busy: true, resetError: '' });
-          try {
-            await this.api('/api/auth/reset', { token: st.resetToken, password: st.resetPassword });
-            history.replaceState(null, '', location.pathname);
-            this.setState({
-              busy: false, resetDone: true, resetPassword: '', resetPassword2: '', resetToken: ''
-            });
-          } catch (e) {
-            this.setState({ busy: false, resetError: String(e.message || e) });
-          }
-        }
+        loginEmail: st.loginEmail,
+        loginError: st.loginError,
+        sendCodeLabel: st.busy ? 'Sending\u2026' : 'Send login code',
+        onLoginEmail: ev => this.setState({ loginEmail: ev.target.value, loginError: '' }),
+        onEmailKey: ev => { if (ev.key === 'Enter') sendCode(); },
+        onSendCode: sendCode,
+        codeEmail: st.codeEmail,
+        codeValue: st.codeValue,
+        codeError: st.codeError,
+        verifyLabel: st.busy ? 'Verifying\u2026' : 'Sign in',
+        resendLabel: st.busy ? 'Sending\u2026' : 'Send a new code',
+        onCodeChange: ev => this.setState({ codeValue: ev.target.value.replace(/\D/g, '').slice(0, 6), codeError: '' }),
+        onCodeKey: ev => { if (ev.key === 'Enter') verify(); },
+        onVerifyCode: verify,
+        onResendCode: sendCode,
+        onChangeEmail: () => this.setState({ authView: 'login', codeValue: '', codeError: '', loginError: '' })
       };
     }
 
@@ -4305,7 +4282,7 @@ class Component extends DCLogic {
             email: f.email, fullName: f.name,
             businessOwnerName: f.owner, businessName: f.business
           }, online
-            ? 'Member added \u2014 an invite email is on its way'
+            ? 'Member added \u2014 a login code has been emailed to them'
             : 'Member added on this device \u2014 no invite email sent')
             .then(done => { if (done) this.setState({ mf: null, mfError: '' }); });
         }

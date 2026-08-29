@@ -201,9 +201,10 @@ a tab picks up other members' activity.
 
 ## Security notes
 
-- **Passwords** — PBKDF2-HMAC-SHA256, 210,000 iterations, fresh 16-byte random
-  salt per password, verified server-side with a constant-time compare. Never
-  stored, logged, or sent anywhere but the Worker.
+- **Passwords** — PBKDF2-HMAC-SHA256, 100,000 iterations (the maximum Cloudflare
+  Workers' WebCrypto allows), fresh 16-byte random salt per password, verified
+  server-side with a constant-time compare against the iteration count stored
+  with that account. Never stored, logged, or sent anywhere but the Worker.
 - **Sessions** — opaque 32-byte token in an `HttpOnly; Secure` cookie,
   unreadable from JavaScript. Only its SHA-256 is stored, so a database leak
   cannot be replayed as a login. Revoked on reset and on deactivation.
