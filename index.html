@@ -461,6 +461,45 @@
               </div>
             </div>
           </sc-if>
+        <sc-if value="{{ showMyBiz }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Posts for my business</div>
+          <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
+            <sc-for list="{{ myBizCards }}" as="b" hint-placeholder-count="4">
+              <div style="border-bottom:1px solid #f2f1ee;background:{{ b.rowBg }}">
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 12px">
+                  <button type="button" onClick="{{ b.onToggle }}" aria-expanded="{{ b.expandedAttr }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:50px;justify-content:center;background:none;border:none;padding:0;cursor:pointer;text-align:left">
+                    <span style="display:flex;align-items:center;gap:6px;width:100%;min-width:0">
+                      <span style="flex:1;min-width:0;font-size:14px;font-weight:600;color:{{ b.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.title }}</span>
+                    </span>
+                    <span style="display:block;width:100%;font-size:12px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.subline }}</span>
+                  </button>
+                  <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.chipBg }};color:{{ b.chipFg }}">{{ b.chip }}</span>
+                  <button type="button" onClick="{{ b.onOpen }}" aria-label="{{ b.openAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:#1c1d1f;color:#fff;cursor:pointer" style-hover="background:#34373e">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
+                  </button>
+                </div>
+                <sc-if value="{{ b.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:2px 12px 12px;display:flex;flex-direction:column;gap:9px">
+                    <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
+                      <dt style="color:#9a9c9f">Found by</dt><dd style="margin:0;color:#38393b">{{ b.foundBy }}</dd>
+                      <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ b.group }}</dd>
+                      <dt style="color:#9a9c9f">Location</dt><dd style="margin:0;color:#38393b">{{ b.location }}</dd>
+                      <dt style="color:#9a9c9f">Posted</dt><dd style="margin:0;color:#38393b">{{ b.dateLabel }}</dd>
+                      <dt style="color:#9a9c9f">Team</dt><dd style="margin:0;color:#38393b">{{ b.teamLabel }}</dd>
+                    </dl>
+                    <sc-if value="{{ b.active }}" hint-placeholder-val="{{ true }}">
+                      <button type="button" onClick="{{ b.onDecline }}" style="width:100%;min-height:50px;border:1px solid #e6d4d4;border-radius:11px;background:#fff;color:oklch(0.5 0.16 25);font-size:14px;font-weight:600;cursor:pointer" style-hover="background:oklch(0.98 0.015 25)">Not a good fit for my business</button>
+                    </sc-if>
+                    <sc-if value="{{ b.declined }}" hint-placeholder-val="{{ false }}">
+                      <p style="margin:0;font-size:12px;color:#6b6d70;background:#f2f1ee;border-radius:11px;padding:8px 10px">{{ b.declineNote }}</p>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
         <sc-if value="{{ isForMe }}" hint-placeholder-val="{{ false }}">
           <sc-for list="{{ reviewCards }}" as="rc" hint-placeholder-count="1">
             <div style="background:#fff;border:1px solid oklch(0.87 0.07 85);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:10px">
@@ -519,41 +558,6 @@
             </div>
           </sc-if>
 
-          <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
-            <sc-for list="{{ myBizCards }}" as="b" hint-placeholder-count="4">
-              <div style="border-bottom:1px solid #f2f1ee;background:{{ b.rowBg }}">
-                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 12px">
-                  <button type="button" onClick="{{ b.onToggle }}" aria-expanded="{{ b.expandedAttr }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:50px;justify-content:center;background:none;border:none;padding:0;cursor:pointer;text-align:left">
-                    <span style="display:flex;align-items:center;gap:6px;width:100%;min-width:0">
-                      <span style="flex:1;min-width:0;font-size:14px;font-weight:600;color:{{ b.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.title }}</span>
-                    </span>
-                    <span style="display:block;width:100%;font-size:12px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.subline }}</span>
-                  </button>
-                  <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.chipBg }};color:{{ b.chipFg }}">{{ b.chip }}</span>
-                  <button type="button" onClick="{{ b.onOpen }}" aria-label="{{ b.openAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:#1c1d1f;color:#fff;cursor:pointer" style-hover="background:#34373e">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
-                  </button>
-                </div>
-                <sc-if value="{{ b.expanded }}" hint-placeholder-val="{{ false }}">
-                  <div style="padding:2px 12px 12px;display:flex;flex-direction:column;gap:9px">
-                    <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
-                      <dt style="color:#9a9c9f">Found by</dt><dd style="margin:0;color:#38393b">{{ b.foundBy }}</dd>
-                      <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ b.group }}</dd>
-                      <dt style="color:#9a9c9f">Location</dt><dd style="margin:0;color:#38393b">{{ b.location }}</dd>
-                      <dt style="color:#9a9c9f">Posted</dt><dd style="margin:0;color:#38393b">{{ b.dateLabel }}</dd>
-                      <dt style="color:#9a9c9f">Team</dt><dd style="margin:0;color:#38393b">{{ b.teamLabel }}</dd>
-                    </dl>
-                    <sc-if value="{{ b.active }}" hint-placeholder-val="{{ true }}">
-                      <button type="button" onClick="{{ b.onDecline }}" style="width:100%;min-height:50px;border:1px solid #e6d4d4;border-radius:11px;background:#fff;color:oklch(0.5 0.16 25);font-size:14px;font-weight:600;cursor:pointer" style-hover="background:oklch(0.98 0.015 25)">Not a good fit for my business</button>
-                    </sc-if>
-                    <sc-if value="{{ b.declined }}" hint-placeholder-val="{{ false }}">
-                      <p style="margin:0;font-size:12px;color:#6b6d70;background:#f2f1ee;border-radius:11px;padding:8px 10px">{{ b.declineNote }}</p>
-                    </sc-if>
-                  </div>
-                </sc-if>
-              </div>
-            </sc-for>
-          </div>
         </sc-if>
       </div>
     </sc-if>
@@ -3442,7 +3446,9 @@ class Component extends DCLogic {
 
     // -- opportunities awaiting my approval as the business owner --
     const reviewCards = db.opportunities
-      .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'pending_review')
+      .filter(o => o.beneficiaryId === me.id
+        && (o.status || 'active') === 'pending_review'
+        && o.submittedById !== me.id)
       .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt))
       .map(o => {
         const sub = this.member(o.submittedById);
@@ -3466,7 +3472,9 @@ class Component extends DCLogic {
       });
 
     const myPendingReviews = db.opportunities
-      .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'pending_review')
+      .filter(o => o.beneficiaryId === me.id
+        && (o.status || 'active') === 'pending_review'
+        && o.submittedById !== me.id)
       .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt));
 
     // -- review status of posts I submitted --
@@ -3846,6 +3854,7 @@ class Component extends DCLogic {
         return;
       }
       const now = this.stamp();
+      // A self-submission can never be a review request.
       const forReview = f.review === 'review' && benId !== me.id;
       this.send('/api/opportunities', {
         beneficiaryId: benId,
@@ -4063,7 +4072,7 @@ class Component extends DCLogic {
         { label: 'Unable', flex: 1, aria: 'Unable', ...tabStyle(st.oppTab === 'unable'), onClick: () => this.setState({ oppTab: 'unable', expandedId: null }) }
       ],
       isForMe: st.oppTab === 'forme',
-      myBizCards,
+      myBizCards, showMyBiz: myBizCards.length > 0 && st.oppTab === 'open',
       reviewCards, hasReviewCards: reviewCards.length > 0,
       myReviewStatus, hasMyReviewStatus: myReviewStatus.length > 0 && st.oppTab === 'forme',
       reviewHistory, hasReviewHistory: reviewHistory.length > 0 && st.oppTab === 'completed',
@@ -4077,7 +4086,10 @@ class Component extends DCLogic {
       oppSearch: st.oppSearch, onOppSearch: e => this.setState({ oppSearch: e.target.value }),
       oppMember: st.oppMember, onOppMember: e => this.setState({ oppMember: e.target.value }),
       oppSort: st.oppSort, onOppSort: e => this.setState({ oppSort: e.target.value }),
-      businessOptions, cards, noCards: st.oppTab === 'forme' ? (myBizCards.length === 0 && reviewCards.length === 0) : cards.length === 0,
+      businessOptions, cards,
+      noCards: st.oppTab === 'forme'
+        ? reviewCards.length === 0
+        : (cards.length === 0 && !(st.oppTab === 'open' && myBizCards.length > 0)),
       hasCards: st.oppTab === 'forme' ? false : cards.length > 0,
       filtersOpen: st.filtersOpen,
       filterToggleLabel: st.filtersOpen ? 'Hide' : (st.oppMember || st.oppSort !== 'new' ? 'Filters \u00b7 on' : 'Filters'),
@@ -4218,7 +4230,7 @@ class Component extends DCLogic {
         ? 'Try a different business name, label, or phrase.'
         : 'Save the wording you normally use for each Rockstar business and it will be one tap away.',
       noBizYet: this.businessesOf(me.id).length === 0,
-      onNewComment: () => this.setState({ cf: { id: null, businessId: '', label: '', text: '' }, cfError: '', screen: 'addComment' }),
+      onNewComment: () => this.setState({ cf: { id: null, businessId: '', serviceId: '', label: '', text: '' }, cfError: '', screen: 'addComment' }),
 
       // add / edit comment
       cfTitle: st.cf.id ? 'Edit comment' : 'Add comment',
