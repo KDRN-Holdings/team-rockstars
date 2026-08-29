@@ -149,7 +149,7 @@
               <button type="button" onClick="{{ goAnnouncements }}" style="flex:none;min-height:32px;padding:0 4px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:13px;font-weight:600;cursor:pointer">View all</button>
             </div>
             <sc-for list="{{ homeAnn }}" as="ha" hint-placeholder-count="2">
-              <button type="button" onClick="{{ ha.onClick }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:46px;background:rgba(255,255,255,0.72);border:none;border-top:1px solid oklch(0.93 0.03 262);cursor:pointer;text-align:left" style-hover="background:#fff">
+              <button type="button" onClick="{{ ha.onClick }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:46px;background:{{ ha.bg }};border:none;border-top:1px solid oklch(0.93 0.03 262);cursor:pointer;text-align:left" style-hover="background:#fff">
                 <span style="flex:1;min-width:0;font-size:14px;font-weight:700;letter-spacing:-0.01em;color:#1c1d1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ha.title }}</span>
                 <sc-if value="{{ ha.isNew }}" hint-placeholder-val="{{ true }}">
                   <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:oklch(0.52 0.16 262);color:#fff">New</span>
@@ -161,7 +161,15 @@
         </sc-if>
 
         <sc-for list="{{ homeAlerts }}" as="al2" hint-placeholder-count="1">
-          <div style="background:oklch(0.97 0.03 85);border:1px solid oklch(0.87 0.07 85);border-radius:12px;padding:11px 13px;font-size:13px;color:oklch(0.4 0.1 70)">{{ al2.text }}</div>
+          <div style="background:oklch(0.97 0.03 85);border:1px solid oklch(0.87 0.07 85);border-radius:12px;padding:11px 13px;font-size:13px;color:oklch(0.4 0.1 70);display:flex;flex-direction:column;gap:7px">
+            <span>{{ al2.text }}</span>
+            <sc-if value="{{ al2.hasMeta }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:12px;color:oklch(0.46 0.08 70)">{{ al2.meta }}</span>
+            </sc-if>
+            <sc-if value="{{ al2.hasAction }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ al2.onAction }}" style="align-self:flex-start;min-height:44px;padding:0 14px;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:oklch(0.42 0.16 262)">{{ al2.actionLabel }}</button>
+            </sc-if>
+          </div>
         </sc-for>
 
         <div>
@@ -273,7 +281,12 @@
 
         <div role="tablist" aria-label="Opportunity status" style="display:flex;gap:4px;background:#f0efec;border-radius:11px;padding:3px">
           <sc-for list="{{ oppTabs }}" as="t" hint-placeholder-count="3">
-            <button type="button" role="tab" aria-selected="{{ t.active }}" onClick="{{ t.onClick }}" style="flex:1;min-height:38px;border:none;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.shadow }}">{{ t.label }}</button>
+            <button type="button" role="tab" aria-selected="{{ t.active }}" aria-label="{{ t.aria }}" onClick="{{ t.onClick }}" style="flex:{{ t.flex }};min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;border:none;border-radius:11px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.shadow }}">
+              {{ t.label }}
+              <sc-if value="{{ t.hasBadge }}" hint-placeholder-val="{{ false }}">
+                <span style="flex:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:oklch(0.74 0.14 85);color:oklch(0.28 0.07 70);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ t.badge }}</span>
+              </sc-if>
+            </button>
           </sc-for>
         </div>
 
@@ -872,7 +885,7 @@
         </sc-if>
 
         <sc-for list="{{ annItems }}" as="an" hint-placeholder-count="3">
-          <div style="background:{{ an.bg }};border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
+          <div style="background:{{ an.bg }};border:1px solid {{ an.border }};border-radius:14px;overflow:hidden">
             <button type="button" onClick="{{ an.onOpen }}" aria-expanded="{{ an.openAttr }}" style="width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:13px 14px;background:none;border:none;cursor:pointer;text-align:left">
               <span style="display:flex;align-items:center;gap:7px;width:100%;min-width:0;flex-wrap:wrap">
                 <sc-if value="{{ an.pinned }}" hint-placeholder-val="{{ false }}">
@@ -2634,6 +2647,12 @@ class Component extends DCLogic {
   }
 
   isPublished(o) { return (o.status || 'active') === 'active'; }
+  // An announcement counts as "new" for 24h after it was published/approved.
+  // Deliberately independent of read/unread state.
+  isFreshAnn(x) {
+    const t = Date.parse(x.approvedAt || x.createdAt);
+    return !!t && (this.now() - t) < DAY;
+  }
   approveOpp(oppId) {
     this.send('/api/opportunities/review', { opportunityId: oppId, decision: 'approve' },
       'Approved! This opportunity is now live for the team.');
@@ -3208,6 +3227,10 @@ class Component extends DCLogic {
         };
       });
 
+    const myPendingReviews = db.opportunities
+      .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'pending_review')
+      .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt));
+
     // -- review status of posts I submitted --
     const myReviewStatus = db.opportunities
       .filter(o => o.submittedById === me.id
@@ -3701,8 +3724,11 @@ class Component extends DCLogic {
         this.nudge(id, st.nudgeText.trim());
         this.setState({ nudgeFor: null, nudgeText: '' });
       },
-      hasUnread: unread.length > 0, unreadCount: String(unread.length),
-      annAria: unread.length ? 'Announcements, ' + unread.length + ' new' : 'Announcements',
+      hasUnread: unread.length + myPendingReviews.length > 0,
+      unreadCount: String(unread.length + myPendingReviews.length),
+      annAria: unread.length + myPendingReviews.length
+        ? 'Announcements, ' + (unread.length + myPendingReviews.length) + ' need attention'
+        : 'Announcements',
       goAnnouncements: () => this.go('announcements'),
       goOpps: () => this.setState({ screen: 'opps', oppTab: 'open', menuOpen: false }),
 
@@ -3749,10 +3775,23 @@ class Component extends DCLogic {
 
       // opportunities
       oppTabs: [
-        { label: 'Open', ...tabStyle(st.oppTab === 'open'), onClick: () => this.setState({ oppTab: 'open', expandedId: null }) },
-        { label: 'For Review', ...tabStyle(st.oppTab === 'forme'), onClick: () => this.setState({ oppTab: 'forme', expandedId: null }) },
-        { label: 'Done', ...tabStyle(st.oppTab === 'completed'), onClick: () => this.setState({ oppTab: 'completed', expandedId: null }) },
-        { label: 'Unable', ...tabStyle(st.oppTab === 'unable'), onClick: () => this.setState({ oppTab: 'unable', expandedId: null }) }
+        { label: 'Open', flex: 1, aria: 'Open', ...tabStyle(st.oppTab === 'open'), onClick: () => this.setState({ oppTab: 'open', expandedId: null }) },
+        {
+          label: 'For Review',
+          flex: 1.45,
+          aria: myPendingReviews.length
+            ? 'For Review, ' + myPendingReviews.length + ' waiting on you'
+            : 'For Review',
+          ...tabStyle(st.oppTab === 'forme'),
+          // Amber alert state only while THIS member has posts awaiting their decision.
+          ...(myPendingReviews.length && st.oppTab !== 'forme'
+            ? { bg: 'oklch(0.95 0.06 92)', fg: 'oklch(0.4 0.1 70)' } : {}),
+          hasBadge: myPendingReviews.length > 0,
+          badge: String(myPendingReviews.length),
+          onClick: () => this.setState({ oppTab: 'forme', expandedId: null })
+        },
+        { label: 'Done', flex: 1, aria: 'Done', ...tabStyle(st.oppTab === 'completed'), onClick: () => this.setState({ oppTab: 'completed', expandedId: null }) },
+        { label: 'Unable', flex: 1, aria: 'Unable', ...tabStyle(st.oppTab === 'unable'), onClick: () => this.setState({ oppTab: 'unable', expandedId: null }) }
       ],
       isForMe: st.oppTab === 'forme',
       myBizCards,
@@ -3896,13 +3935,15 @@ class Component extends DCLogic {
       annItems: annList.map(x => {
         const open = st.expandedAnn === x.id;
         const read = isRead(x.id);
+        const fresh = this.isFreshAnn(x);
         return {
           title: x.title, message: x.message,
           date: this.fmt(x.createdAt) + ' \u00b7 ' + this.ago(x.createdAt),
-          pinned: !!x.pinned, isNew: !read,
+          pinned: !!x.pinned, isNew: fresh,
           open, openAttr: open ? 'true' : 'false',
           clamp: open ? 'unset' : '2',
-          bg: read ? '#fff' : 'oklch(0.98 0.012 262)',
+          bg: fresh ? 'oklch(0.985 0.035 92)' : read ? '#fff' : 'oklch(0.98 0.012 262)',
+          border: fresh ? 'oklch(0.85 0.09 92)' : '#e6e5e2',
           canManage: false,
           pinLabel: x.pinned ? 'Unpin' : 'Pin',
           onOpen: () => {
@@ -4020,7 +4061,9 @@ class Component extends DCLogic {
       adminPendingEmpty: !(db.announcements || []).some(x => x.status === 'pending'),
       adminPendingCount: (db.announcements || []).filter(x => x.status === 'pending').length,
       homeAnn: annList.slice(0, 2).map(x => ({
-        title: x.title, date: this.fmt(x.createdAt), isNew: !isRead(x.id), pinned: !!x.pinned,
+        title: x.title, date: this.fmt(x.createdAt),
+        isNew: this.isFreshAnn(x), pinned: !!x.pinned,
+        bg: this.isFreshAnn(x) ? 'oklch(0.975 0.04 92)' : 'rgba(255,255,255,0.72)',
         onClick: () => this.setState({ screen: 'announcements', expandedAnn: x.id, menuOpen: false })
       })),
       hasHomeAnn: annList.length > 0,
@@ -4047,6 +4090,23 @@ class Component extends DCLogic {
       leaderOptions: activeMembers.slice().sort((p, n) => p.fullName.localeCompare(n.fullName))
         .map(m => ({ value: String(m.id), label: m.fullName })),
       homeAlerts: [].concat(
+        // Personal, derived from pending_review rows — never added to the group feed.
+        myPendingReviews.map(o => {
+          const sub = this.member(o.submittedById);
+          return {
+            text: 'Action needed: A Team Rockstar submitted an opportunity for '
+              + o.businessDisplayName + ' and would like you to review it.',
+            hasMeta: true,
+            meta: 'Submitted by: ' + (sub ? sub.fullName : 'a former member')
+              + ' \u00b7 Business: ' + o.businessDisplayName,
+            hasAction: true,
+            actionLabel: 'Review post',
+            onAction: () => {
+              this.go('opps');
+              this.setState({ oppTab: 'forme', expandedId: o.id, menuOpen: false });
+            }
+          };
+        }),
         (db.nudges || []).some(n => n.recipientId === me.id)
           && (db.nudges || []).filter(n => n.recipientId === me.id)
             .reduce((acc, n) => Math.max(acc, Date.parse(n.createdAt)), 0) > (s.lastAt || 0)
