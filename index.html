@@ -407,7 +407,7 @@
                 <span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:oklch(0.96 0.04 70);color:oklch(0.42 0.11 70);margin-bottom:5px">Awaiting your approval</span>
                 <div style="font-size:15px;font-weight:700">{{ rc.title }}</div>
                 <div style="font-size:13px;color:#6b6d70">{{ rc.submittedBy }} &middot; {{ rc.location }}</div>
-                <div style="font-size:12px;color:#9a9c9f">{{ rc.dateLabel }}</div>
+                <div style="font-size:12px;color:#9a9c9f">{{ rc.groupName }} &middot; {{ rc.dateLabel }}</div>
               </div>
               <sc-if value="{{ rc.hasNote }}" hint-placeholder-val="{{ true }}">
                 <div style="background:#faf9f7;border-radius:11px;padding:9px 11px">
@@ -419,9 +419,9 @@
                 Open Facebook post
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
               </button>
-              <div style="display:flex;gap:8px">
-                <button type="button" onClick="{{ rc.onDecline }}" style="flex:none;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#4a4c4f;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#faf9f7">Not a good fit</button>
-                <button type="button" onClick="{{ rc.onApprove }}" style="flex:1;min-width:0;min-height:48px;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:700;cursor:pointer" style-hover="background:oklch(0.42 0.16 262)">Post to Opportunities</button>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button type="button" onClick="{{ rc.onApprove }}" disabled="{{ rc.busy }}" style="width:100%;min-height:50px;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:700;cursor:pointer" style-hover="background:oklch(0.42 0.16 262)">Approve &amp; Post</button>
+                <button type="button" onClick="{{ rc.onDecline }}" disabled="{{ rc.busy }}" style="width:100%;min-height:48px;border:1px solid oklch(0.82 0.09 25);border-radius:11px;background:#fff;color:oklch(0.48 0.17 25);font-size:15px;font-weight:600;cursor:pointer" style-hover="background:oklch(0.97 0.02 25)">Not a good fit</button>
               </div>
             </div>
           </sc-for>
@@ -435,6 +435,9 @@
                     <span style="flex:1;min-width:0">
                       <span style="display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ mr.business }}</span>
                       <span style="display:block;font-size:12px;color:#9a9c9f">{{ mr.when }}</span>
+                      <sc-if value="{{ mr.hasReason }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block;font-size:12px;color:#4a4c4f;margin-top:2px">{{ mr.reason }}</span>
+                      </sc-if>
                     </span>
                     <span style="flex:none;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;background:{{ mr.bg }};color:{{ mr.fg }};max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ mr.state }}</span>
                   </div>
@@ -1292,6 +1295,9 @@
                   <span style="flex:none;padding:4px 8px;border-radius:11px;font-size:11px;font-weight:700;background:{{ ao.stateBg }};color:{{ ao.stateFg }}">{{ ao.stateLabel }}</span>
                 </div>
                 <div style="font-size:11.5px;color:#6b6d70;background:#f6f5f2;border-radius:11px;padding:7px 9px">{{ ao.counts }}</div>
+                <sc-if value="{{ ao.hasReview }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:11.5px;color:#4a4c4f;background:#f6f5f2;border-radius:11px;padding:7px 9px">{{ ao.reviewLine }}</div>
+                </sc-if>
                 <sc-if value="{{ ao.hasReasons }}" hint-placeholder-val="{{ false }}">
                   <div style="font-size:11.5px;color:#4a4c4f;background:oklch(0.97 0.02 25);border-radius:11px;padding:7px 9px">{{ ao.reasons }}</div>
                 </sc-if>
@@ -1840,9 +1846,15 @@
           <p style="margin:3px 0 0;font-size:14px;color:#6b6d70">{{ declineBody }}</p>
         </div>
         <sc-for list="{{ declineOptions }}" as="dr" hint-placeholder-count="6">
-          <button type="button" onClick="{{ dr.onClick }}" style="width:100%;min-height:50px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;background:#fff;cursor:pointer;text-align:left;font-size:15px;font-weight:600;color:#1c1d1f" style-hover="background:#faf9f7;border-color:#c9c7c2">{{ dr.label }}</button>
+          <button type="button" onClick="{{ dr.onClick }}" aria-pressed="{{ dr.pressed }}" style="width:100%;min-height:50px;padding:0 14px;border:1px solid {{ dr.border }};border-radius:12px;background:{{ dr.bg }};cursor:pointer;text-align:left;font-size:15px;font-weight:600;color:#1c1d1f" style-hover="border-color:#c9c7c2">{{ dr.label }}</button>
         </sc-for>
-        <button type="button" onClick="{{ onSkipDecline }}" style="min-height:48px;width:100%;border:none;border-radius:12px;background:#1c1d1f;color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:2px">Decline without a reason</button>
+        <sc-if value="{{ declineOtherOpen }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <label for="tr-dor" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Your reason <span style="font-weight:400;color:#9a9c9f">&mdash; optional</span></label>
+            <textarea id="tr-dor" rows="3" value="{{ declineOtherText }}" onChange="{{ onDeclineOtherText }}" placeholder="Tell the member who found it why" style="width:100%;padding:11px 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.5"></textarea>
+          </div>
+        </sc-if>
+        <button type="button" onClick="{{ onConfirmDecline }}" disabled="{{ declineBusy }}" style="min-height:48px;width:100%;border:none;border-radius:12px;background:#1c1d1f;color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:2px">{{ declineConfirmLabel }}</button>
         <button type="button" onClick="{{ onCloseDecline }}" style="min-height:48px;width:100%;border:none;border-radius:12px;background:#f0efec;color:#4a4c4f;font-size:15px;font-weight:600;cursor:pointer">Cancel</button>
       </div>
     </div>
@@ -1891,6 +1903,17 @@ const STATUS = {
   unable: { label: 'Unable', bg: 'oklch(0.96 0.03 25)', fg: 'oklch(0.45 0.14 25)' }
 };
 const UNABLE = ['not_member', 'join_pending', 'banned', 'unable'];
+// Reasons a business owner can give when a submitted post is not a fit.
+const REVIEW_DECLINE_REASONS = [
+  'Too far away',
+  'Outside my service area',
+  'Not the type of customer I\u2019m looking for',
+  'I don\u2019t offer this service',
+  'Post is no longer available',
+  'Already handled / already responded',
+  'Not appropriate for my business',
+  'Other'
+];
 // Reasons a member can give for not being able to comment on a post.
 const UNABLE_REASONS = [
   { label: 'Post is no longer available', note: 'It was deleted or can no longer be found.' },
@@ -1924,6 +1947,7 @@ class Component extends DCLogic {
       mf: null, mfError: '', profile: null, annForm: null, annError: '', expandedAnn: null,
       annDeclineFor: null, annDeclineText: '',
       shareFor: null, shareSearch: '', prefsSheet: null, declineFor: null, declineReason: '', formWarn: null,
+      declineChoice: '', declineOtherText: '',
       reviewDeclineFor: null, memberSearch: '', profileEdit: false,
       transferSearch: '', transferTo: null,
       bizForm: null, bizError: '', expandedBiz: null, basicsOpen: false, avatarDraft: null,
@@ -2124,6 +2148,7 @@ class Component extends DCLogic {
         } else {
           o.status = 'declined'; o.reviewedById = meId; o.reviewedAt = now;
           o.declineReason = b.reason || '';
+          o.archivedAt = now;
         }
         break;
       }
@@ -2610,12 +2635,14 @@ class Component extends DCLogic {
 
   isPublished(o) { return (o.status || 'active') === 'active'; }
   approveOpp(oppId) {
-    this.send('/api/opportunities/review', { opportunityId: oppId, decision: 'approve' }, 'Posted to Opportunities');
+    this.send('/api/opportunities/review', { opportunityId: oppId, decision: 'approve' },
+      'Approved! This opportunity is now live for the team.');
   }
   declineReview(oppId, reason) {
     this.send('/api/opportunities/review',
-      { opportunityId: oppId, decision: 'decline', reason: reason || '' }, 'Marked not a good fit')
-      .then(() => this.setState({ declineFor: null, reviewDeclineFor: null }));
+      { opportunityId: oppId, decision: 'decline', reason: reason || '' },
+      'Archived \u2014 the member who found it has been thanked.')
+      .then(() => this.setState({ declineFor: null, reviewDeclineFor: null, declineChoice: '', declineOtherText: '' }));
   }
 
   // ---------- administrator role transfer (distinct from leadership titles) ----------
@@ -2792,7 +2819,7 @@ class Component extends DCLogic {
   ownerDecline(oppId, reason) {
     this.send('/api/opportunities/review',
       { opportunityId: oppId, decision: 'decline', reason: reason || '' }, 'Removed from active tagging')
-      .then(() => this.setState({ declineFor: null, declineReason: '' }));
+      .then(() => this.setState({ declineFor: null, declineReason: '', declineChoice: '', declineOtherText: '' }));
   }
 
   // ---------- actions ----------
@@ -3132,7 +3159,7 @@ class Component extends DCLogic {
         const sub = this.member(o.submittedById);
         const all = db.statuses.filter(y => y.opportunityId === o.id);
         const done = all.filter(y => y.status === 'completed').length;
-        const declined = !!o.ownerDeclinedAt;
+        const declined = (o.status || 'active') === 'declined';
         const expanded = st.expandedId === o.id;
         return {
           title: o.notes || o.facebookGroupName || 'Facebook post',
@@ -3148,7 +3175,7 @@ class Component extends DCLogic {
           teamLabel: done + ' of ' + all.length + ' Rockstars tagged this',
           declined, active: !declined,
           declineNote: declined
-            ? 'You declined this on ' + this.fmt(o.ownerDeclinedAt) + (o.ownerDeclineReason ? ' \u2014 ' + o.ownerDeclineReason : '')
+            ? 'Declined on ' + this.fmt(o.reviewedAt || o.createdAt) + (o.declineReason ? ' \u2014 ' + o.declineReason : '')
             : '',
           expanded, expandedAttr: expanded ? 'true' : 'false',
           rowBg: expanded ? '#faf9f7' : '#fff',
@@ -3156,7 +3183,7 @@ class Component extends DCLogic {
           onToggle: () => this.setState({ expandedId: expanded ? null : o.id }),
           onOpen: () => this.openExternal(o.facebookUrl),
           openAria: 'Open Facebook post in ' + (o.facebookGroupName || 'Facebook'),
-          onDecline: () => this.setState({ declineFor: o.id })
+          onDecline: () => this.setState({ declineFor: o.id, declineChoice: '', declineOtherText: '' })
         };
       });
 
@@ -3167,33 +3194,41 @@ class Component extends DCLogic {
       .map(o => {
         const sub = this.member(o.submittedById);
         return {
-          title: o.facebookGroupName || 'Facebook post',
-          submittedBy: sub ? sub.fullName : 'Removed member',
+          title: o.businessDisplayName || 'Facebook post',
+          submittedBy: 'Found by ' + (sub ? sub.fullName : 'a removed member'),
           location: o.location || 'Not recorded',
+          groupName: o.facebookGroupName || 'No group recorded',
           dateLabel: this.fmt(o.createdAt) + ' \u00b7 ' + this.ago(o.createdAt),
           note: o.reviewNote || '',
           hasNote: !!o.reviewNote,
+          busy: !!st.busy,
           onOpen: () => this.openExternal(o.facebookUrl),
           onApprove: () => this.approveOpp(o.id),
-          onDecline: () => this.setState({ reviewDeclineFor: o.id })
+          onDecline: () => this.setState({ reviewDeclineFor: o.id, declineChoice: '', declineOtherText: '' })
         };
       });
 
     // -- review status of posts I submitted --
     const myReviewStatus = db.opportunities
-      .filter(o => o.submittedById === me.id && (o.status || 'active') !== 'active')
-      .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt))
+      .filter(o => o.submittedById === me.id
+        && (o.status === 'pending_review' || o.status === 'declined' || (o.status === 'active' && o.reviewedById)))
+      .sort((p, n) => Date.parse(n.reviewedAt || n.createdAt) - Date.parse(p.reviewedAt || p.createdAt))
       .slice(0, 4)
       .map(o => {
         const ben = this.member(o.beneficiaryId);
         const pending = o.status === 'pending_review';
+        const declined = o.status === 'declined';
         return {
           business: o.businessDisplayName,
           state: pending
             ? 'Waiting on ' + (ben ? (ben.businessOwnerName || ben.fullName).split(' ')[0] : 'the owner') + ' to review'
-            : 'Not a good fit' + (o.ownerDeclineReason ? ' \u2014 ' + o.ownerDeclineReason.toLowerCase() : ''),
-          bg: pending ? 'oklch(0.96 0.04 70)' : '#f0efec',
-          fg: pending ? 'oklch(0.42 0.11 70)' : '#4a4c4f',
+            : declined ? 'Not approved' : 'Approved',
+          hasReason: !pending,
+          reason: pending ? ''
+            : declined ? 'Reason: ' + (o.declineReason || 'No reason given')
+            : 'Now live in Opportunities',
+          bg: pending ? 'oklch(0.96 0.04 70)' : declined ? '#f0efec' : 'oklch(0.95 0.05 155)',
+          fg: pending ? 'oklch(0.42 0.11 70)' : declined ? '#4a4c4f' : 'oklch(0.38 0.1 155)',
           when: this.ago(o.createdAt)
         };
       });
@@ -4018,9 +4053,17 @@ class Component extends DCLogic {
           ? [{ text: 'You have Team Rockstars opportunities waiting for you. Jump back in and help the team!' }] : [],
         pendingShares.length
           ? [{ text: pendingShares.length === 1 ? 'A member shared a tag with you \u2014 review it on the Opportunities tab.' : pendingShares.length + ' members shared tags with you \u2014 review them on the Opportunities tab.' }] : [],
-        db.opportunities.filter(o => o.submittedById === me.id && o.ownerDeclinedAt).slice(-2).map(o => ({
-          text: o.businessDisplayName + ' declined the post you found' + (o.ownerDeclineReason ? ' \u2014 ' + o.ownerDeclineReason.toLowerCase() : '') + '.'
-        }))
+        db.opportunities
+          .filter(o => o.submittedById === me.id && o.reviewedById && o.reviewedById !== me.id
+            && (o.status === 'active' || o.status === 'declined'))
+          .sort((p, n) => Date.parse(n.reviewedAt || n.createdAt) - Date.parse(p.reviewedAt || p.createdAt))
+          .slice(0, 2)
+          .map(o => ({
+            text: o.status === 'active'
+              ? 'Thank you for finding this opportunity for ' + o.businessDisplayName + '! It was approved and is now live for the team.'
+              : 'Thank you for finding this opportunity for ' + o.businessDisplayName + '. The business owner reviewed it and decided not to post it.'
+                + (o.declineReason ? ' Reason: ' + o.declineReason : '')
+          }))
       ),
 
       // profile
@@ -4236,11 +4279,19 @@ class Component extends DCLogic {
           const rows = db.statuses.filter(y => y.opportunityId === o.id);
           const cnt = k => rows.filter(y => y.status === k).length;
           const unableRows = rows.filter(y => UNABLE.indexOf(y.status) > -1);
+          const reviewer = o.reviewedById ? this.member(o.reviewedById) : null;
           const sub = this.member(o.submittedById);
           const archived = !!o.archivedAt;
           return {
             business: o.businessDisplayName,
             meta: (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 ' + this.fmt(o.createdAt) + ' \u00b7 ' + (o.facebookGroupName || 'No group'),
+            hasReview: !!o.reviewedById,
+            reviewLine: o.reviewedById
+              ? (o.status === 'declined' ? 'Declined & archived' : 'Approved')
+                + ' by ' + (reviewer ? reviewer.fullName : 'a reviewer')
+                + ' \u00b7 ' + this.fmt(o.reviewedAt || o.createdAt)
+                + (o.status === 'declined' && o.declineReason ? ' \u00b7 Reason: ' + o.declineReason : '')
+              : '',
             hasReasons: unableRows.length > 0,
             reasons: 'Unable: ' + unableRows.slice(0, 8).map(u => {
               const um = this.member(u.memberId);
@@ -4511,14 +4562,35 @@ class Component extends DCLogic {
       onClosePrefs: () => this.setState({ prefsSheet: null }),
 
       declineOpen: !!(st.declineFor || st.reviewDeclineFor),
-      declineTitle: st.reviewDeclineFor ? 'Why isn\u2019t this a good fit?' : 'Why is this not a fit?',
+      declineTitle: st.reviewDeclineFor ? 'Why isn\u2019t this opportunity a good fit?' : 'Why is this not a fit?',
       declineBody: st.reviewDeclineFor
-        ? 'Optional. It leaves your review list either way, and the member who found it will see it was marked not a good fit.'
+        ? 'The reason is optional. The post is archived either way, and the member who found it is thanked and shown your reason.'
         : 'Optional. The post is removed from active tagging either way, and the member who found it will see that you declined.',
-      declineOptions: ['Location is too far', 'Not a service I provide', 'Wrong type of tag', 'Already handled', 'Not relevant', 'Other']
-        .map(r => ({ label: r, onClick: () => st.reviewDeclineFor ? this.declineReview(st.reviewDeclineFor, r) : this.ownerDecline(st.declineFor, r) })),
-      onSkipDecline: () => st.reviewDeclineFor ? this.declineReview(st.reviewDeclineFor, '') : this.ownerDecline(st.declineFor, ''),
-      onCloseDecline: () => this.setState({ declineFor: null, reviewDeclineFor: null }),
+      declineOptions: (st.reviewDeclineFor
+        ? REVIEW_DECLINE_REASONS
+        : ['Location is too far', 'Not a service I provide', 'Wrong type of tag', 'Already handled', 'Not relevant', 'Other']
+      ).map(r => {
+        const sel = st.declineChoice === r;
+        return {
+          label: r, pressed: sel ? 'true' : 'false',
+          bg: sel ? 'oklch(0.97 0.02 262)' : '#fff',
+          border: sel ? 'oklch(0.66 0.13 262)' : '#d9d8d4',
+          onClick: () => this.setState({ declineChoice: r, declineOtherText: r === 'Other' ? st.declineOtherText : '' })
+        };
+      }),
+      declineOtherOpen: st.declineChoice === 'Other',
+      declineOtherText: st.declineOtherText,
+      onDeclineOtherText: e => this.setState({ declineOtherText: e.target.value }),
+      declineBusy: !!st.busy,
+      declineConfirmLabel: st.reviewDeclineFor ? 'Archive opportunity' : 'Decline this post',
+      onConfirmDecline: () => {
+        const choice = st.declineChoice;
+        const extra = (st.declineOtherText || '').trim();
+        const reason = choice === 'Other' ? (extra ? 'Other \u2014 ' + extra : 'Other') : (choice || '');
+        if (st.reviewDeclineFor) this.declineReview(st.reviewDeclineFor, reason);
+        else this.ownerDecline(st.declineFor, reason);
+      },
+      onCloseDecline: () => this.setState({ declineFor: null, reviewDeclineFor: null, declineChoice: '', declineOtherText: '' }),
 
       confirmOpen: !!st.confirm,
       confirmTitle: st.confirm ? st.confirm.title : '',
