@@ -149,16 +149,40 @@
               <button type="button" onClick="{{ goAnnouncements }}" style="flex:none;min-height:32px;padding:0 4px;background:none;border:none;color:oklch(0.52 0.16 262);font-size:13px;font-weight:600;cursor:pointer">View all</button>
             </div>
             <sc-for list="{{ homeAnn }}" as="ha" hint-placeholder-count="2">
-              <button type="button" onClick="{{ ha.onClick }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:46px;background:{{ ha.bg }};border:none;border-top:1px solid oklch(0.93 0.03 262);cursor:pointer;text-align:left" style-hover="background:#fff">
-                <span style="flex:1;min-width:0;font-size:14px;font-weight:700;letter-spacing:-0.01em;color:#1c1d1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ha.title }}</span>
-                <sc-if value="{{ ha.isNew }}" hint-placeholder-val="{{ true }}">
-                  <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:oklch(0.52 0.16 262);color:#fff">New</span>
-                </sc-if>
-                <span style="flex:none;font-size:12px;color:#9a9c9f;white-space:nowrap">{{ ha.date }}</span>
-              </button>
+              <div style="display:flex;align-items:center;gap:4px;padding-right:6px;background:{{ ha.bg }};border-top:1px solid oklch(0.93 0.03 262)">
+                <button type="button" onClick="{{ ha.onClick }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:46px;background:none;border:none;cursor:pointer;text-align:left">
+                  <span style="flex:1;min-width:0;font-size:14px;font-weight:700;letter-spacing:-0.01em;color:#1c1d1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ha.title }}</span>
+                  <sc-if value="{{ ha.isNew }}" hint-placeholder-val="{{ true }}">
+                    <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:oklch(0.52 0.16 262);color:#fff">New</span>
+                  </sc-if>
+                  <span style="flex:none;font-size:12px;color:#9a9c9f;white-space:nowrap">{{ ha.date }}</span>
+                </button>
+                <button type="button" onClick="{{ ha.onDismiss }}" aria-label="{{ ha.dismissAria }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:none;color:#8a8c8f;cursor:pointer" style-hover="background:#fff;color:#3d3f42">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+              </div>
             </sc-for>
           </section>
         </sc-if>
+
+        <sc-for list="{{ homeNudges }}" as="nd" hint-placeholder-count="1">
+          <section aria-label="Team Rockstars nudge" style="background:#1c1d1f;border:2px solid oklch(0.68 0.16 85);border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;color:#fff">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:9px;background:oklch(0.8 0.16 85);color:#1c1d1f;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1">&#9733;</span>
+              <span style="flex:1;min-width:0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.86 0.13 85)">Team Rockstars nudge</span>
+              <span style="flex:none;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:oklch(0.8 0.16 85);color:#1c1d1f">Nudge</span>
+            </div>
+            <div>
+              <div style="font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.015em">You&rsquo;ve got opportunities waiting for you!</div>
+              <p style="margin:3px 0 0;font-size:13.5px;line-height:1.45;color:rgba(255,255,255,0.78)">{{ nd.message }}</p>
+              <div style="font-size:11.5px;color:rgba(255,255,255,0.5);margin-top:4px">{{ nd.meta }}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" onClick="{{ nd.onAction }}" style="flex:1;min-width:150px;min-height:46px;border:none;border-radius:11px;background:oklch(0.8 0.16 85);color:#1c1d1f;font-size:14px;font-weight:700;cursor:pointer">Jump back in</button>
+              <button type="button" onClick="{{ nd.onDismiss }}" style="flex:none;min-height:46px;padding:0 15px;border:1px solid rgba(255,255,255,0.28);border-radius:11px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Dismiss</button>
+            </div>
+          </section>
+        </sc-for>
 
         <sc-for list="{{ homeAlerts }}" as="al2" hint-placeholder-count="1">
           <div style="background:oklch(0.97 0.03 85);border:1px solid oklch(0.87 0.07 85);border-radius:12px;padding:11px 13px;font-size:13px;color:oklch(0.4 0.1 70);display:flex;flex-direction:column;gap:7px">
@@ -403,8 +427,10 @@
                     </sc-if>
                     <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
                       <dt style="color:#9a9c9f">Owner</dt><dd style="margin:0;color:#38393b">{{ c.owner }}</dd>
+                      <sc-if value="{{ c.hasGroup }}" hint-placeholder-val="{{ false }}">
+                        <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ c.groupName }}</dd>
+                      </sc-if>
                       <dt style="color:#9a9c9f">Found by</dt><dd style="margin:0;color:#38393b">{{ c.submittedBy }}</dd>
-                      <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ c.groupName }}</dd>
                       <dt style="color:#9a9c9f">Posted</dt><dd style="margin:0;color:#38393b">{{ c.dateLabel }}</dd>
                       <dt style="color:#9a9c9f">Team</dt><dd style="margin:0;color:#38393b">{{ c.teamLabel }}</dd>
                     </dl>
@@ -482,8 +508,9 @@
                   <div style="padding:2px 12px 12px;display:flex;flex-direction:column;gap:9px">
                     <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
                       <dt style="color:#9a9c9f">Found by</dt><dd style="margin:0;color:#38393b">{{ b.foundBy }}</dd>
-                      <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ b.group }}</dd>
-                      <dt style="color:#9a9c9f">Location</dt><dd style="margin:0;color:#38393b">{{ b.location }}</dd>
+                      <sc-if value="{{ b.hasGroup }}" hint-placeholder-val="{{ false }}">
+                        <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ b.group }}</dd>
+                      </sc-if>
                       <dt style="color:#9a9c9f">Posted</dt><dd style="margin:0;color:#38393b">{{ b.dateLabel }}</dd>
                       <dt style="color:#9a9c9f">Team</dt><dd style="margin:0;color:#38393b">{{ b.teamLabel }}</dd>
                     </dl>
@@ -509,8 +536,8 @@
                 <sc-if value="{{ rc.hasService }}" hint-placeholder-val="{{ false }}">
                   <div style="font-size:13px;font-weight:600;color:oklch(0.45 0.14 262)">{{ rc.serviceName }}</div>
                 </sc-if>
-                <div style="font-size:13px;color:#6b6d70">{{ rc.submittedBy }} &middot; {{ rc.location }}</div>
-                <div style="font-size:12px;color:#9a9c9f">{{ rc.groupName }} &middot; {{ rc.dateLabel }}</div>
+                <div style="font-size:13px;color:#6b6d70">{{ rc.submittedBy }}</div>
+                <div style="font-size:12px;color:#9a9c9f">{{ rc.dateLabel }}</div>
               </div>
               <sc-if value="{{ rc.hasLooking }}" hint-placeholder-val="{{ true }}">
                 <div style="background:oklch(0.97 0.02 262);border:1px solid oklch(0.9 0.04 262);border-radius:11px;padding:8px 10px">
@@ -579,7 +606,7 @@
             </select>
             <sc-if value="{{ showServicePicker }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:8px">
-                <label for="tr-svc" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">What do they need?</label>
+                <label for="tr-svc" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Which service are they requesting for this business?</label>
                 <select id="tr-svc" value="{{ formService }}" onChange="{{ onFormService }}" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f">
                   <sc-for list="{{ serviceOptions }}" as="so" hint-placeholder-count="3">
                     <option value="{{ so.value }}">{{ so.label }}</option>
@@ -609,22 +636,6 @@
           <div>
             <label for="tr-url" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Facebook post link</label>
             <input id="tr-url" type="url" inputmode="url" value="{{ formUrl }}" onChange="{{ onFormUrl }}" placeholder="https://www.facebook.com/groups/..." style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
-          </div>
-          <div>
-            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px">
-              <label for="tr-look" style="font-size:12px;font-weight:600;color:#4a4c4f">What are they looking for?</label>
-              <span style="font-size:11px;color:#9a9c9f">{{ formNotesCount }}</span>
-            </div>
-            <textarea id="tr-look" rows="2" value="{{ formNotes }}" onChange="{{ onFormNotes }}" placeholder="Looking for a local weight-loss provider that offers semaglutide." style="width:100%;max-width:300px;padding:9px 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.45"></textarea>
-            <p style="margin:3px 0 0;font-size:11.5px;color:#9a9c9f">Briefly describe what the person is asking for so Rockstars know how to respond.</p>
-          </div>
-          <div>
-            <label for="tr-group" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Facebook group name <span style="font-weight:400;color:#9a9c9f">&mdash; recommended</span></label>
-            <input id="tr-group" type="text" value="{{ formGroup }}" onChange="{{ onFormGroup }}" placeholder="e.g. East Valley Neighbors" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
-          </div>
-          <div>
-            <label for="tr-loc" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Post location <span style="font-weight:400;color:#9a9c9f">&mdash; city or county</span></label>
-            <input id="tr-loc" type="text" value="{{ formLocation }}" onChange="{{ onFormLocation }}" placeholder="e.g. Chandler, AZ" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
           </div>
           <sc-if value="{{ canSendForReview }}" hint-placeholder-val="{{ true }}">
             <div style="border-top:1px solid #e6e5e2;padding-top:10px;display:flex;flex-direction:column;gap:7px">
@@ -893,7 +904,7 @@
           </sc-if>
           <div>
             <label for="tr-cl" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Comment label <span style="font-weight:400;color:#9a9c9f">&mdash; optional</span></label>
-            <input id="tr-cl" type="text" value="{{ cfLabel }}" onChange="{{ onCfLabel }}" placeholder="General, Weight loss, Personal experience" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
+            <input id="tr-cl" type="text" value="{{ cfLabel }}" onChange="{{ onCfLabel }}" placeholder="General, Business strategy, Personal experience" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d8d4;border-radius:12px;font-size:14px;background:#fff;color:#1c1d1f" />
           </div>
           <div>
             <label for="tr-ct" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">My comment</label>
@@ -932,6 +943,13 @@
               <textarea id="tr-am" rows="4" value="{{ annMessage }}" onChange="{{ onAnnMessage }}" placeholder="What do members need to know?" style="width:100%;padding:11px 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.5"></textarea>
               <div style="display:flex;justify-content:flex-end;margin-top:5px;font-size:12px;color:#9a9c9f">{{ annCount }}</div>
             </div>
+            <sc-if value="{{ annCtxAdmin }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <label for="tr-ax" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Expiration date <span style="font-weight:400;color:#9a9c9f">&mdash; optional</span></label>
+                <input id="tr-ax" type="date" value="{{ annExpires }}" onChange="{{ onAnnExpires }}" min="{{ annExpiresMin }}" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:16px;background:#fff;color:#1c1d1f" />
+                <p style="margin:6px 0 0;font-size:12px;color:#9a9c9f">Optional. If no expiration date is selected, this announcement will automatically expire after 30 days.</p>
+              </div>
+            </sc-if>
             <sc-if value="{{ annPinVisible }}" hint-placeholder-val="{{ true }}">
               <button type="button" onClick="{{ onAnnPin }}" style="align-self:flex-start;min-height:48px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;background:{{ annPinBg }};color:{{ annPinFg }};font-size:14px;font-weight:600;cursor:pointer">{{ annPinLabel }}</button>
             </sc-if>
@@ -987,6 +1005,10 @@
               <span style="font-size:12px;color:#9a9c9f">{{ an.date }}</span>
               <span style="font-size:14px;color:#38393b;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;-webkit-line-clamp:{{ an.clamp }}">{{ an.message }}</span>
             </button>
+            <div style="display:flex;align-items:center;gap:8px;padding:0 14px 11px">
+              <span style="flex:1;min-width:0;font-size:11.5px;color:#9a9c9f">{{ an.expiryNote }}</span>
+              <button type="button" onClick="{{ an.onDismiss }}" style="flex:none;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#4a4c4f;font-size:13px;font-weight:600;cursor:pointer">{{ an.dismissLabel }}</button>
+            </div>
           </div>
         </sc-for>
       </div>
@@ -1038,10 +1060,6 @@
               <label for="tr-pn" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Full name</label>
               <input id="tr-pn" type="text" value="{{ pName }}" onChange="{{ onPName }}" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
             </div>
-            <div>
-              <label for="tr-po" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Owner name shown to members</label>
-              <input id="tr-po" type="text" value="{{ pOwner }}" onChange="{{ onPOwner }}" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
-            </div>
             <p style="margin:0;font-size:12px;color:#9a9c9f">Email changes require admin approval.</p>
             <button type="button" onClick="{{ onSaveProfile }}" style="min-height:46px;width:100%;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Save</button>
           </div>
@@ -1060,12 +1078,12 @@
             <div style="font-size:13px;font-weight:700">{{ bizFormTitle }}</div>
             <div>
               <label for="tr-bf-name" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Business name</label>
-              <input id="tr-bf-name" type="text" value="{{ bfName }}" onChange="{{ onBfName }}" placeholder="Sculpt Rx" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-name" type="text" value="{{ bfName }}" onChange="{{ onBfName }}" placeholder="ABC Consulting" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
             </div>
             <div style="display:flex;gap:8px">
               <div style="flex:1;min-width:0">
                 <label for="tr-bf-ind" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Industry / category</label>
-                <input id="tr-bf-ind" type="text" value="{{ bfIndustry }}" onChange="{{ onBfIndustry }}" placeholder="Med spa" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+                <input id="tr-bf-ind" type="text" value="{{ bfIndustry }}" onChange="{{ onBfIndustry }}" placeholder="Business Consulting" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
               </div>
               <div style="flex:1;min-width:0">
                 <label for="tr-bf-city" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Primary location</label>
@@ -1074,7 +1092,7 @@
             </div>
             <div>
               <label for="tr-bf-web" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Website / contact</label>
-              <input id="tr-bf-web" type="text" value="{{ bfWebsite }}" onChange="{{ onBfWebsite }}" placeholder="sculptrx.com" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-web" type="text" value="{{ bfWebsite }}" onChange="{{ onBfWebsite }}" placeholder="abcconsulting.com" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
             </div>
             <div>
               <label for="tr-bf-rad" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Service area</label>
@@ -1104,19 +1122,37 @@
             </div>
             <div>
               <label for="tr-bf-wants" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Preferred tags</label>
-              <input id="tr-bf-wants" type="text" value="{{ bfWants }}" onChange="{{ onBfWants }}" placeholder="Weight loss, GLP-1, Wellness" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-wants" type="text" value="{{ bfWants }}" onChange="{{ onBfWants }}" placeholder="Business Strategy, Leadership Coaching" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
             </div>
             <div>
               <label for="tr-bf-nowants" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Tags you do not want</label>
-              <input id="tr-bf-nowants" type="text" value="{{ bfNotWants }}" onChange="{{ onBfNotWants }}" placeholder="Insurance, Job posts" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-nowants" type="text" value="{{ bfNotWants }}" onChange="{{ onBfNotWants }}" placeholder="Job posts, Insurance offers" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
             </div>
             <div>
               <label for="tr-bf-pref" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Preferred cities / counties</label>
-              <input id="tr-bf-pref" type="text" value="{{ bfPreferred }}" onChange="{{ onBfPreferred }}" placeholder="Chandler, Gilbert, Mesa" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-pref" type="text" value="{{ bfPreferred }}" onChange="{{ onBfPreferred }}" placeholder="Springfield, Riverside, Fairview" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
             </div>
             <div>
               <label for="tr-bf-avoid" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Locations you will not serve</label>
-              <input id="tr-bf-avoid" type="text" value="{{ bfAvoid }}" onChange="{{ onBfAvoid }}" placeholder="Ventura County" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+              <input id="tr-bf-avoid" type="text" value="{{ bfAvoid }}" onChange="{{ onBfAvoid }}" placeholder="Lakeside County" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+            </div>
+            <div>
+              <label for="tr-bf-svc" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Services offered</label>
+              <sc-if value="{{ bfHasServices }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px">
+                  <sc-for list="{{ bfServices }}" as="bsv" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 6px 6px 11px;border-radius:9px;background:oklch(0.96 0.025 262);color:oklch(0.36 0.13 262);font-size:13px;font-weight:600">
+                      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ bsv.name }}</span>
+                      <button type="button" onClick="{{ bsv.onRemove }}" aria-label="{{ bsv.removeAria }}" style="flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:rgba(255,255,255,0.75);color:oklch(0.4 0.14 262);font-size:14px;line-height:1;cursor:pointer">&times;</button>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="display:flex;gap:7px">
+                <input id="tr-bf-svc" type="text" value="{{ bfSvcDraft }}" onChange="{{ onBfSvcDraft }}" onKeyDown="{{ onBfSvcKey }}" placeholder="Business Strategy" style="flex:1;min-width:0;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+                <button type="button" onClick="{{ onBfAddService }}" style="flex:none;min-height:46px;padding:0 13px;border:1px solid #d9d8d4;border-radius:12px;background:#fff;color:oklch(0.42 0.15 262);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:#faf9f7">+ Add</button>
+              </div>
+              <p style="margin:5px 0 0;font-size:11.5px;color:#9a9c9f">Add each service members should tag you for. They save with the business &mdash; no need to come back and edit.</p>
             </div>
             <sc-if value="{{ bizError }}" hint-placeholder-val="{{ false }}">
               <p role="alert" style="margin:0;font-size:12px;color:oklch(0.45 0.17 25)">{{ bizError }}</p>
@@ -1219,7 +1255,7 @@
                     </div>
                     <sc-if value="{{ bz.svcFormOpen }}" hint-placeholder-val="{{ false }}">
                       <div style="margin-top:7px;display:flex;flex-direction:column;gap:7px;border:1px solid #e6e5e2;border-radius:11px;padding:10px">
-                        <input type="text" aria-label="Service name" value="{{ svcName }}" onChange="{{ onSvcName }}" placeholder="Service name, e.g. Inverter Replacement" style="width:100%;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
+                        <input type="text" aria-label="Service name" value="{{ svcName }}" onChange="{{ onSvcName }}" placeholder="Service name, e.g. Process Improvement" style="width:100%;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
                         <input type="text" aria-label="Service description" value="{{ svcDesc }}" onChange="{{ onSvcDesc }}" placeholder="Short description — optional" style="width:100%;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
                         <sc-if value="{{ svcError }}" hint-placeholder-val="{{ false }}">
                           <p role="alert" style="margin:0;font-size:12.5px;color:oklch(0.45 0.17 25)">{{ svcError }}</p>
@@ -1490,6 +1526,11 @@
                   <textarea id="tr-aam" rows="4" value="{{ annMessage }}" onChange="{{ onAnnMessage }}" placeholder="What do members need to know?" style="width:100%;padding:11px 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f;resize:vertical;line-height:1.5"></textarea>
                   <div style="display:flex;justify-content:flex-end;margin-top:4px;font-size:12px;color:#9a9c9f">{{ annCount }}</div>
                 </div>
+                <div>
+                  <label for="tr-aax" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:5px">Expiration date <span style="font-weight:400;color:#9a9c9f">&mdash; optional</span></label>
+                  <input id="tr-aax" type="date" value="{{ annExpires }}" onChange="{{ onAnnExpires }}" min="{{ annExpiresMin }}" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;font-size:16px;background:#fff;color:#1c1d1f" />
+                  <p style="margin:5px 0 0;font-size:11.5px;color:#9a9c9f">Optional. If no expiration date is selected, this announcement will automatically expire after 30 days.</p>
+                </div>
                 <sc-if value="{{ annPinVisible }}" hint-placeholder-val="{{ true }}">
                   <button type="button" onClick="{{ onAnnPin }}" style="align-self:flex-start;min-height:44px;padding:0 12px;border:1px solid #d9d8d4;border-radius:12px;background:{{ annPinBg }};color:{{ annPinFg }};font-size:13px;font-weight:600;cursor:pointer">{{ annPinLabel }}</button>
                 </sc-if>
@@ -1542,10 +1583,14 @@
                   <span style="min-width:0">
                     <span style="display:block;font-size:14px;font-weight:700">{{ ai.title }}</span>
                     <span style="display:block;font-size:12px;color:#9a9c9f">{{ ai.date }}</span>
+                    <span style="display:block;font-size:11.5px;color:#9a9c9f">{{ ai.expiryNote }}</span>
                   </span>
-                  <sc-if value="{{ ai.pinned }}" hint-placeholder-val="{{ false }}">
-                    <span style="flex:none;padding:3px 8px;border-radius:11px;font-size:11px;font-weight:700;background:#f0efec;color:#5c5f64">Pinned</span>
-                  </sc-if>
+                  <span style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                    <span style="padding:3px 8px;border-radius:11px;font-size:11px;font-weight:700;background:{{ ai.stateBg }};color:{{ ai.stateFg }}">{{ ai.stateLabel }}</span>
+                    <sc-if value="{{ ai.pinned }}" hint-placeholder-val="{{ false }}">
+                      <span style="padding:3px 8px;border-radius:11px;font-size:11px;font-weight:700;background:#f0efec;color:#5c5f64">Pinned</span>
+                    </sc-if>
+                  </span>
                 </div>
                 <div style="display:flex;gap:8px">
                   <button type="button" onClick="{{ ai.onPin }}" style="flex:1;min-height:44px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;color:#1c1d1f;font-size:13px;font-weight:600;cursor:pointer">{{ ai.pinLabel }}</button>
@@ -1595,11 +1640,11 @@
                 </div>
                 <div>
                   <label for="tr-mb" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Business name</label>
-                  <input id="tr-mb" type="text" value="{{ mfBusiness }}" onChange="{{ onMfBusiness }}" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
+                  <input id="tr-mb" type="text" value="{{ mfBusiness }}" onChange="{{ onMfBusiness }}" placeholder="ABC Consulting" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
                 </div>
                 <div>
                   <label for="tr-mo" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Business owner name</label>
-                  <input id="tr-mo" type="text" value="{{ mfOwner }}" onChange="{{ onMfOwner }}" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
+                  <input id="tr-mo" type="text" value="{{ mfOwner }}" onChange="{{ onMfOwner }}" placeholder="Jane Smith" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
                 </div>
                 <div>
                   <label for="tr-mr" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Role</label>
@@ -1807,6 +1852,22 @@
                 </sc-if>
               </div>
             </sc-for>
+            <sc-if value="{{ hasNudgeLog }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:4px">
+                <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f;margin-bottom:6px">Nudges sent</div>
+                <div style="background:#fff;border:1px solid #e6e5e2;border-radius:12px;overflow:hidden">
+                  <sc-for list="{{ nudgeLog }}" as="nl" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #f2f1ee">
+                      <span style="flex:1;min-width:0">
+                        <span style="display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ nl.name }}</span>
+                        <span style="display:block;font-size:11.5px;color:#9a9c9f">{{ nl.when }}</span>
+                      </span>
+                      <span style="flex:none;padding:3px 8px;border-radius:11px;font-size:11px;font-weight:700;background:{{ nl.stateBg }};color:{{ nl.stateFg }};white-space:nowrap">{{ nl.state }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
           </div>
         </sc-if>
       </div>
@@ -2085,7 +2146,7 @@ class Component extends DCLogic {
       screen: 'home', oppTab: 'open', oppSort: 'new', oppSearch: '', oppMember: '', expandedId: null, filtersOpen: false,
       loginEmail: '', loginError: '', authView: 'login', busy: false,
       codeEmail: '', codeValue: '', codeError: '',
-      form: { beneficiaryId: '', business: '', url: '', group: '', notes: '', type: 'Post', location: '', review: 'now', reviewNote: '', serviceKey: '' },
+      form: { beneficiaryId: '', business: '', url: '', review: 'now', reviewNote: '', serviceKey: '' },
       formError: '', formDupe: '', svcForm: null, svcError: '',
       cf: { id: null, businessId: '', serviceId: '', label: '', text: '' }, cfError: '',
       cSearch: '', range: 'this', rankMonth: '', adminTab: 'overview', adminSearch: '',
@@ -2155,11 +2216,11 @@ class Component extends DCLogic {
     return {
       meId: 1, nextId: 100,
       members: [{
-        id: 1, email: 'admin@sculpt-rx.net', fullName: 'Chapter Administrator',
+        id: 1, email: 'admin@example.com', fullName: 'Chapter Administrator',
         businessOwnerName: '', avatar: null, role: 'admin', status: 'active',
         tagGroup: 'active', joinedAt: now, hasPassword: true
       }],
-      businesses: [], opportunities: [], statuses: [], comments: [],
+      businesses: [], services: [], opportunities: [], statuses: [], comments: [],
       announcements: [], annReads: [], groups: [], groupStatus: [],
       nudges: [], roleTransfers: [], closedMonths: [],
       leadership: { president: null, vicePresident: null, chapterTech: null, ambassador: null },
@@ -2221,13 +2282,19 @@ class Component extends DCLogic {
         } : m);
         break;
 
-      case '/api/businesses':
+      case '/api/businesses': {
+        const svcList = b.services;
+        const rest = { ...b };
+        delete rest.services;
+        let bizId;
         if (method === 'PATCH' && b.id) {
-          s.businesses = s.businesses.map(x => x.id === +b.id ? { ...x, ...b, id: x.id, memberId: x.memberId } : x);
+          bizId = +b.id;
+          s.businesses = s.businesses.map(x => x.id === bizId ? { ...x, ...rest, id: x.id, memberId: x.memberId } : x);
         } else {
           const first = !s.businesses.some(x => x.memberId === meId && x.active !== false);
+          bizId = nid();
           s.businesses.push({
-            id: nid(), memberId: meId, name: b.name || '', industry: b.industry || '',
+            id: bizId, memberId: meId, name: b.name || '', industry: b.industry || '',
             website: b.website || '', city: b.city || '', radius: b.radius || 'none',
             serviceState: b.serviceState || '',
             wants: b.wants || [], notWants: b.notWants || [],
@@ -2235,7 +2302,26 @@ class Component extends DCLogic {
             primary: first, active: true, createdAt: now
           });
         }
+        // Reconcile the service list submitted with the business.
+        if (Array.isArray(svcList)) {
+          s.services = s.services || [];
+          const keep = [];
+          svcList.forEach(sv => {
+            const name = String((sv && sv.name) || '').trim().slice(0, 80);
+            if (!name) return;
+            const byId = sv.id ? s.services.find(x => x.id === +sv.id) : null;
+            if (byId) { byId.name = name; byId.active = true; keep.push(byId.id); return; }
+            const byName = s.services.find(x => x.businessId === bizId && x.name.toLowerCase() === name.toLowerCase());
+            if (byName) { byName.name = name; byName.active = true; keep.push(byName.id); return; }
+            const fresh = nid();
+            s.services.push({ id: fresh, businessId: bizId, name, description: '', active: true });
+            keep.push(fresh);
+          });
+          s.services = s.services.map(x =>
+            x.businessId === bizId && keep.indexOf(x.id) < 0 ? { ...x, active: false } : x);
+        }
         break;
+      }
 
       case '/api/businesses/primary':
         s.businesses = s.businesses.map(x =>
@@ -2351,6 +2437,15 @@ class Component extends DCLogic {
         });
         break;
 
+      case '/api/announcements/dismiss': {
+        const aid = +b.id;
+        const on = b.dismissed !== false;
+        const row = list('annReads').find(r => r.announcementId === aid && r.memberId === meId);
+        if (row) row.dismissedAt = on ? now : null;
+        else s.annReads.push({ announcementId: aid, memberId: meId, readAt: now, dismissedAt: on ? now : null });
+        break;
+      }
+
       case '/api/announcements/read':
         (b.ids || []).forEach(id => {
           if (!list('annReads').some(r => r.announcementId === id && r.memberId === meId)) {
@@ -2411,12 +2506,14 @@ class Component extends DCLogic {
       case '/api/admin/announcements':
         if (b.id) {
           s.announcements = s.announcements.map(a => a.id === +b.id
-            ? { ...a, title: b.title, message: b.message, pinned: !!b.pinned } : a);
+            ? { ...a, title: b.title, message: b.message, pinned: !!b.pinned,
+                expiresAt: b.expiresAt || null } : a);
         } else {
           s.announcements.push({
             id: nid(), authorId: meId, submittedById: meId, title: b.title,
             message: b.message, status: 'published', pinned: !!b.pinned,
-            approvedById: meId, approvedAt: now, declineReason: '', createdAt: now
+            approvedById: meId, approvedAt: now, publishedAt: now,
+            expiresAt: b.expiresAt || null, declineReason: '', createdAt: now
           });
         }
         break;
@@ -2425,7 +2522,7 @@ class Component extends DCLogic {
         const a = s.announcements.find(x => x.id === +b.id);
         if (!a) throw new Error('Not found.');
         if (b.decision === 'approve') {
-          a.status = 'published'; a.approvedById = meId; a.approvedAt = now;
+          a.status = 'published'; a.approvedById = meId; a.approvedAt = now; a.publishedAt = now;
         } else {
           a.status = 'declined'; a.approvedById = meId; a.approvedAt = now;
           a.declineReason = b.reason || '';
@@ -2447,10 +2544,20 @@ class Component extends DCLogic {
         if (Date.now() - last < 864e5) throw new Error('That member was nudged in the last 24 hours.');
         s.nudges.push({
           id: nid(), senderId: meId, recipientId: +b.memberId,
-          message: b.message || '', readAt: null, createdAt: now
+          message: b.message || '', readAt: null, viewedAt: null, dismissedAt: null, createdAt: now
         });
         break;
       }
+
+      case '/api/nudges/view':
+        s.nudges = (s.nudges || []).map(n => (n.recipientId === meId
+          && (b.ids || []).indexOf(n.id) > -1 && !n.viewedAt) ? { ...n, viewedAt: now } : n);
+        break;
+
+      case '/api/nudges/dismiss':
+        s.nudges = (s.nudges || []).map(n => (n.recipientId === meId && n.id === +b.id)
+          ? { ...n, viewedAt: n.viewedAt || now, dismissedAt: now } : n);
+        break;
 
       case '/api/admin/groups':
         if (b.id) {
@@ -2486,7 +2593,7 @@ class Component extends DCLogic {
     const s = this.localLoad();
     const me = s.members.find(m => m.id === s.meId) || s.members[0];
     return {
-      me, members: s.members, businesses: s.businesses,
+      me, members: s.members, businesses: s.businesses, services: s.services || [],
       opportunities: s.opportunities, statuses: s.statuses, comments: s.comments,
       announcements: s.announcements, annReads: s.annReads,
       leadership: s.leadership, groups: s.groups, groupStatus: s.groupStatus,
@@ -2695,6 +2802,22 @@ class Component extends DCLogic {
     this._onFocus = () => { if (this.db.sessionId) this.refresh({ quiet: true }); };
     window.addEventListener('focus', this._onFocus);
   }
+  // Seeing the nudge on Home counts as viewing it; dismissing is separate.
+  componentDidUpdate() {
+    if (this.state.loading || this.state.screen !== 'home') return;
+    if (this._nudgeViewBusy || this._nudgeViewFailed) return;
+    const me = this.me;
+    if (!me) return;
+    const ids = (this.db.nudges || [])
+      .filter(n => n.recipientId === me.id && !n.viewedAt && !n.dismissedAt)
+      .map(n => n.id);
+    if (!ids.length) return;
+    this._nudgeViewBusy = true;
+    this.api('/api/nudges/view', { ids })
+      .then(() => this.refresh({ quiet: true }))
+      .catch(() => { this._nudgeViewFailed = true; })
+      .then(() => { this._nudgeViewBusy = false; });
+  }
   componentWillUnmount() {
     clearInterval(this._clockTimer);
     clearTimeout(this._t);
@@ -2813,15 +2936,34 @@ class Component extends DCLogic {
   }
   /** Flat "business — service" choices for one owner; value is "bizId:svcId". */
   serviceChoicesFor(memberId) {
+    const bizList = this.businessesOf(memberId);
+    // Only qualify with the business name when the owner runs more than one,
+    // so a single-business owner sees plain service names.
+    const qualify = bizList.length > 1;
     const out = [];
-    this.businessesOf(memberId).forEach(b => {
+    const seen = {};
+    bizList.forEach(b => {
       const svcs = this.servicesOf(b.id);
-      if (!svcs.length) { out.push({ value: b.id + ':', label: b.name, businessId: b.id, serviceId: null, serviceName: '', businessName: b.name }); return; }
-      svcs.forEach(sv => out.push({
-        value: b.id + ':' + sv.id, label: b.name + ' \u2014 ' + sv.name,
-        businessId: b.id, serviceId: sv.id, serviceName: sv.name, businessName: b.name
-      }));
+      if (!svcs.length) {
+        out.push({ value: b.id + ':', label: b.name, businessId: b.id, serviceId: null, serviceName: '', businessName: b.name });
+        return;
+      }
+      svcs.forEach(sv => {
+        const name = (sv.name || '').trim();
+        if (!name) return;
+        // One entry per business + service name: the same service listed twice
+        // never produces two identical options.
+        const k = b.id + '|' + name.toLowerCase();
+        if (seen[k]) return;
+        seen[k] = 1;
+        out.push({
+          value: b.id + ':' + sv.id,
+          label: qualify ? b.name + ' \u2014 ' + name : name,
+          businessId: b.id, serviceId: sv.id, serviceName: name, businessName: b.name
+        });
+      });
     });
+    out.sort((p, n) => p.label.localeCompare(n.label));
     return out;
   }
   saveService(businessId, form) {
@@ -2840,6 +2982,40 @@ class Component extends DCLogic {
     const t = Date.parse(x.approvedAt || x.createdAt);
     return !!t && (this.now() - t) < DAY;
   }
+  /** When an announcement went live (publication, not authoring). */
+  annPublishedAt(x) { return Date.parse(x.publishedAt || x.approvedAt || x.createdAt) || 0; }
+  /** Admin-chosen date, otherwise 30 days after publication. */
+  annExpiresAt(x) {
+    if (x.expiresAt) { const t = Date.parse(x.expiresAt); if (t) return t; }
+    return this.annPublishedAt(x) + 30 * DAY;
+  }
+  isAnnExpired(x) { return this.annExpiresAt(x) <= this.now(); }
+  annExpiryNote(x) {
+    const t = this.annExpiresAt(x);
+    const when = this.fmt(new Date(t).toISOString());
+    if (t <= this.now()) return 'Expired ' + when;
+    const days = Math.max(1, Math.ceil((t - this.now()) / DAY));
+    return 'Expires ' + when + ' \u00b7 ' + days + (days === 1 ? ' day left' : ' days left');
+  }
+  ymd(ms) {
+    const d = new Date(ms);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  /** Viewed = seen in the announcement list. Clears the badge only. */
+  markAnnViewed(ids) {
+    const list = (ids || []).filter(Boolean);
+    if (!list.length) return;
+    this.api('/api/announcements/read', { ids: list })
+      .then(() => this.refresh({ quiet: true })).catch(() => {});
+  }
+  /** Dismissed = hidden from this member's Home screen. Nobody else is affected. */
+  dismissAnn(id, dismissed) {
+    const on = dismissed !== false;
+    this.send('/api/announcements/dismiss', { id, dismissed: on },
+      on ? 'Cleared from your Home screen' : 'Back on your Home screen');
+  }
+  dismissNudge(id) { this.send('/api/nudges/dismiss', { id }, 'Nudge cleared'); }
+
   approveOpp(oppId) {
     this.send('/api/opportunities/review', { opportunityId: oppId, decision: 'approve' },
       'Approved! This opportunity is now live for the team.');
@@ -2939,7 +3115,9 @@ class Component extends DCLogic {
       id: f.id || undefined, name: f.name, industry: f.industry, website: f.website,
       city: f.city, radius: f.radius, serviceState: f.serviceState || '',
       wants: f.wants || [], notWants: f.notWants || [],
-      preferred: f.preferred || [], avoid: f.avoid || []
+      preferred: f.preferred || [], avoid: f.avoid || [],
+      // Saved in the same request, so a new business never has to be reopened.
+      services: (f.services || []).map(sv => ({ id: sv.id || null, name: sv.name }))
     }, f.id ? 'Business updated' : 'Business added', f.id ? 'PATCH' : 'POST')
       .then(done => { if (done) this.setState({ bizForm: null, bizError: '' }); });
   }
@@ -3190,10 +3368,22 @@ class Component extends DCLogic {
     const myRow = rank.find(r => r.id === me.id);
     const prev = this.ranking(lastMonth);
     const prevRow = prev.find(r => r.id === me.id);
-    const annList = (db.announcements || []).filter(x => (x.status || 'published') === 'published').slice().sort((p, n) =>
-      (n.pinned ? 1 : 0) - (p.pinned ? 1 : 0) || Date.parse(n.createdAt) - Date.parse(p.createdAt));
-    const isRead = id => (db.annReads || []).some(r => r.announcementId === id && r.memberId === me.id);
+    // publishedAnn keeps expired items for admin history; annList is what
+    // members see. Viewed (badge) and dismissed (Home) are independent.
+    const publishedAnn = (db.announcements || [])
+      .filter(x => (x.status || 'published') === 'published')
+      .slice()
+      .sort((p, n) => (n.pinned ? 1 : 0) - (p.pinned ? 1 : 0)
+        || this.annPublishedAt(n) - this.annPublishedAt(p));
+    const annList = publishedAnn.filter(x => !this.isAnnExpired(x));
+    const annStatusOf = id => (db.annReads || []).find(r => r.announcementId === id && r.memberId === me.id) || null;
+    const isRead = id => { const r = annStatusOf(id); return !!(r && r.readAt); };
+    const isDismissed = id => { const r = annStatusOf(id); return !!(r && r.dismissedAt); };
     const unread = annList.filter(x => !isRead(x.id));
+    const homeAnnList = annList.filter(x => !isDismissed(x.id)).slice(0, 3);
+    const myNudges = (db.nudges || [])
+      .filter(n => n.recipientId === me.id && !n.dismissedAt)
+      .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt));
     const isAdmin = me.role === 'admin';
     const activeMembers = db.members.filter(m => m.status === 'active');
 
@@ -3258,7 +3448,8 @@ class Component extends DCLogic {
 
     const menuItems = [
       { label: 'Member Dashboard', color: '#1c1d1f', badge: '', onClick: () => this.go('members') },
-      { label: 'Announcements', color: '#1c1d1f', badge: unread.length ? String(unread.length) : '', onClick: () => this.go('announcements') },
+      { label: 'Announcements', color: '#1c1d1f', badge: unread.length ? String(unread.length) : '',
+        onClick: () => { this.markAnnViewed(unread.map(x => x.id)); this.go('announcements'); } },
       { label: 'My saved comments', color: '#1c1d1f', badge: '', onClick: () => this.go('comments') },
       { label: 'My history', color: '#1c1d1f', badge: '', onClick: () => this.go('activity') }
     ];
@@ -3300,7 +3491,7 @@ class Component extends DCLogic {
       const key = 'card-' + o.id;
       const typ = o.type || 'Post';
       const expanded = st.expandedId === o.id;
-      const short = ((o.facebookGroupName || 'No group recorded') + ' \u00b7 ' + (sub ? sub.fullName.split(' ')[0] : 'Removed member')).trim();
+      const short = 'Found by ' + (sub ? sub.fullName.split(' ')[0] : 'a former member') + ' \u00b7 ' + this.ago(o.createdAt);
       const copied = st.copied === key;
       let copyLabel = o.serviceName
         ? 'No saved comment for this service yet \u2014 add one'
@@ -3314,7 +3505,8 @@ class Component extends DCLogic {
         serviceName: o.serviceName || '',
         owner: ben ? ben.businessOwnerName || ben.fullName : 'Former member',
         submittedBy: sub ? sub.fullName : 'Removed member',
-        groupName: o.facebookGroupName || 'Not recorded',
+        groupName: o.facebookGroupName || '',
+        hasGroup: !!o.facebookGroupName,
         dateLabel: this.fmt(o.createdAt) + ' \u00b7 ' + this.ago(o.createdAt),
         teamLabel: done + ' of ' + all.length + ' Rockstars tagged this',
         notes: o.notes || '',
@@ -3375,14 +3567,16 @@ class Component extends DCLogic {
         const declined = (o.status || 'active') === 'declined';
         const expanded = st.expandedId === o.id;
         return {
-          title: o.notes || o.facebookGroupName || 'Facebook post',
-          subline: (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 ' + (o.location || 'No location') + ' \u00b7 ' + this.ago(o.createdAt),
+          title: o.serviceName || o.notes || o.businessDisplayName || 'Facebook post',
+          subline: [o.serviceName ? o.businessDisplayName : '',
+            'Found by ' + (sub ? sub.fullName.split(' ')[0] : 'a former member'),
+            this.ago(o.createdAt)].filter(Boolean).join(' \u00b7 '),
           chip: declined ? 'Declined' : done + ' tagged',
           chipBg: declined ? '#eeedea' : 'oklch(0.95 0.05 155)',
           chipFg: declined ? '#4a4c4f' : 'oklch(0.38 0.1 155)',
           type: o.type || 'Post',
-          group: o.facebookGroupName || 'Not recorded',
-          location: o.location || 'Not recorded',
+          group: o.facebookGroupName || '',
+          hasGroup: !!o.facebookGroupName,
           dateLabel: this.fmt(o.createdAt),
           foundBy: sub ? sub.fullName : 'Removed member',
           teamLabel: done + ' of ' + all.length + ' Rockstars tagged this',
@@ -3425,10 +3619,10 @@ class Component extends DCLogic {
           hasLooking: !!o.notes,
           looking: o.notes ? 'Looking for: ' + o.notes : '',
           meta: [
-            (o.facebookGroupName || 'No group recorded'),
+            o.facebookGroupName,
             'Found by ' + (mine ? 'you' : (sub ? sub.fullName.split(' ')[0] : 'a former member')),
             'Reviewed ' + this.fmt(o.reviewedAt || o.createdAt)
-          ].join(' \u00b7 '),
+          ].filter(Boolean).join(' \u00b7 '),
           state: declined ? 'Not approved' : 'Approved',
           hasReason: true,
           reason: declined
@@ -3807,9 +4001,22 @@ class Component extends DCLogic {
     const mf = st.mf;
     const myPrefs = this.prefsOf(me.id);
     const splitList = v => (v || '').split(',').map(x => x.trim()).filter(Boolean);
-    const pf = st.profile || {
-      name: me.fullName, owner: me.businessOwnerName || ''
+    // Chip editor for services entered while creating or editing a business.
+    const addBizService = () => {
+      const bf = this.state.bizForm;
+      if (!bf) return;
+      const name = (bf.svcDraft || '').trim().slice(0, 80);
+      if (!name) return;
+      const list = (bf.services || []).slice();
+      if (list.some(sv => sv.name.toLowerCase() === name.toLowerCase())) {
+        this.setState({ bizForm: { ...bf, svcDraft: '' } });
+        return;
+      }
+      if (list.length >= 30) { this.setState({ bizError: 'That is as many services as one business can list.' }); return; }
+      list.push({ id: null, name });
+      this.setState({ bizForm: { ...bf, services: list, svcDraft: '' }, bizError: '' });
     };
+    const pf = st.profile || { name: me.fullName };
 
     const submitOpp = (force, forceFit) => {
       const f = st.form;
@@ -3819,16 +4026,12 @@ class Component extends DCLogic {
       const choices = this.serviceChoicesFor(benId);
       const picked = choices.find(c2 => c2.value === f.serviceKey) || (choices.length === 1 ? choices[0] : null);
       if (choices.length > 1 && !picked) {
-        this.setState({ formError: 'Choose what they need.', formDupe: '' }); return;
+        this.setState({ formError: 'Choose which service they are requesting.', formDupe: '' }); return;
       }
       const business = (picked ? picked.businessName : ((this.member(benId) || {}).businessName || '')).trim();
       if (!business) { this.setState({ formError: 'That owner has no business set up yet.', formDupe: '' }); return; }
       if (!/^https?:\/\/(www\.|m\.|web\.)?facebook\.com\/.+/i.test(url) && !/^https?:\/\/fb\.(com|me)\/.+/i.test(url)) {
         this.setState({ formError: 'That does not look like a Facebook post link. It should start with https://www.facebook.com/', formDupe: '' });
-        return;
-      }
-      if (!(f.notes || '').trim()) {
-        this.setState({ formError: 'Tell the team what this person is looking for.', formDupe: '' });
         return;
       }
       const dupe = db.opportunities.find(o => !o.archivedAt && o.facebookUrl.replace(/\/$/, '') === url.replace(/\/$/, ''));
@@ -3840,7 +4043,7 @@ class Component extends DCLogic {
         });
         return;
       }
-      const fitCheck = this.checkFit(benId, f.location, [f.notes, business, f.group, f.location].join(' '));
+      const fitCheck = this.checkFit(benId, '', [business, picked ? picked.serviceName : ''].join(' '));
       if (fitCheck.reasons.length && !forceFit) {
         const ben = this.member(benId);
         this.setState({
@@ -3863,9 +4066,6 @@ class Component extends DCLogic {
         serviceName: picked ? picked.serviceName : '',
         businessDisplayName: business,
         facebookUrl: f.url,
-        facebookGroupName: f.group,
-        location: f.location,
-        notes: (f.notes || '').trim().slice(0, 300),
         sendForReview: forReview,
         reviewNote: f.reviewNote || '',
         force: !!force
@@ -3873,7 +4073,7 @@ class Component extends DCLogic {
         .then(done => {
           if (!done) return;
           this.setState({
-            form: { beneficiaryId: '', business: '', url: '', group: '', notes: '', type: 'Post', location: '', review: 'now', reviewNote: '', serviceKey: '' },
+            form: { beneficiaryId: '', business: '', url: '', review: 'now', reviewNote: '', serviceKey: '' },
             formError: '', formDupe: '', formWarn: null,
             screen: forReview ? 'home' : 'opps', oppTab: 'open'
           });
@@ -3954,7 +4154,7 @@ class Component extends DCLogic {
       })),
       ovQuick: [
         { label: 'Add a member', onClick: () => this.setState({ adminTab: 'members', mf: { id: null, name: '', email: '', business: '', owner: '', role: 'member', tagGroup: 'active' }, mfError: '' }) },
-        { label: 'Post an announcement', onClick: () => this.setState({ adminTab: 'ann', annForm: { id: null, ctx: 'admin', title: '', message: '', pinned: false }, annError: '' }) },
+        { label: 'Post an announcement', onClick: () => this.setState({ adminTab: 'ann', annForm: { id: null, ctx: 'admin', title: '', message: '', pinned: false, expiresAt: '' }, annError: '' }) },
         { label: 'Review submissions', onClick: () => this.setState({ adminTab: 'ann' }) },
         { label: 'Nudge quiet members', onClick: () => this.setState({ adminTab: 'rankings' }) }
       ],
@@ -3971,6 +4171,8 @@ class Component extends DCLogic {
       rankNudgeRows: this.ranking(thisMonth).map(r => {
         const goalN = this.props.monthlyTagGoal ?? 25;
         const behind = Math.max(0, goalN - r.s.completed);
+        const lastRow = (db.nudges || []).filter(n2 => n2.recipientId === r.id)
+          .sort((p2, n2) => Date.parse(n2.createdAt) - Date.parse(p2.createdAt))[0];
         const last = this.lastNudgeAt(r.id);
         return {
           rank: String(r.rank), name: r.name, business: r.business,
@@ -3980,7 +4182,10 @@ class Component extends DCLogic {
           behindFg: behind ? 'oklch(0.42 0.11 70)' : 'oklch(0.38 0.1 155)',
           isMe: r.id === me.id,
           canNudge: behind > 0 && r.id !== me.id,
-          lastNudge: last ? 'Nudged ' + this.ago(new Date(last).toISOString()) : 'Never nudged',
+          lastNudge: lastRow
+            ? 'Nudged ' + this.ago(lastRow.createdAt) + ' \u00b7 '
+              + (lastRow.dismissedAt ? 'dismissed' : lastRow.viewedAt ? 'viewed' : 'not yet viewed')
+            : 'Never nudged',
           onNudge: () => this.setState({
             nudgeFor: r.id,
             nudgeText: behind
@@ -3989,6 +4194,21 @@ class Component extends DCLogic {
           })
         };
       }),
+      // Nudge audit trail: who, when, and whether they saw or cleared it.
+      nudgeLog: (db.nudges || []).slice()
+        .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt))
+        .slice(0, 20)
+        .map(n => {
+          const to = this.member(n.recipientId);
+          return {
+            name: to ? to.fullName : 'Former member',
+            when: this.fmt(n.createdAt) + ' \u00b7 ' + this.ago(n.createdAt),
+            state: n.dismissedAt ? 'Dismissed' : n.viewedAt ? 'Viewed' : 'Not viewed',
+            stateBg: n.dismissedAt ? '#f0efec' : n.viewedAt ? 'oklch(0.95 0.05 155)' : 'oklch(0.96 0.04 70)',
+            stateFg: n.dismissedAt ? '#4a4c4f' : n.viewedAt ? 'oklch(0.38 0.1 155)' : 'oklch(0.42 0.11 70)'
+          };
+        }),
+      hasNudgeLog: (db.nudges || []).length > 0,
       nudgeOpen: !!st.nudgeFor,
       nudgeName: st.nudgeFor && this.member(st.nudgeFor) ? this.member(st.nudgeFor).fullName : '',
       nudgeLast: st.nudgeFor && this.lastNudgeAt(st.nudgeFor)
@@ -4002,12 +4222,17 @@ class Component extends DCLogic {
         this.nudge(id, st.nudgeText.trim());
         this.setState({ nudgeFor: null, nudgeText: '' });
       },
-      hasUnread: unread.length + myPendingReviews.length > 0,
-      unreadCount: String(unread.length + myPendingReviews.length),
-      annAria: unread.length + myPendingReviews.length
-        ? 'Announcements, ' + (unread.length + myPendingReviews.length) + ' need attention'
+      // The badge counts announcements not yet SEEN in the list. Opening the
+      // list clears it; it never dismisses anything from Home.
+      hasUnread: unread.length > 0,
+      unreadCount: String(unread.length),
+      annAria: unread.length
+        ? 'Announcements, ' + unread.length + ' not yet viewed'
         : 'Announcements',
-      goAnnouncements: () => this.go('announcements'),
+      goAnnouncements: () => {
+        this.markAnnViewed(unread.map(x => x.id));
+        this.go('announcements');
+      },
       goOpps: () => this.setState({ screen: 'opps', oppTab: 'open', menuOpen: false }),
 
       // home
@@ -4128,13 +4353,7 @@ class Component extends DCLogic {
       formBusiness: st.form.business || (this.member(+defaultBenef) || {}).businessName || '',
       onFormBusiness: e => setForm('business', e.target.value),
       formUrl: st.form.url, onFormUrl: e => setForm('url', e.target.value),
-      formGroup: st.form.group, onFormGroup: e => setForm('group', e.target.value),
-      formNotes: st.form.notes,
-      onFormNotes: e => setForm('notes', e.target.value.slice(0, 300)),
-      formNotesCount: (st.form.notes || '').length + ' / 300',
       formError: st.formError, formDupe: st.formDupe,
-      formLocation: st.form.location,
-      onFormLocation: e => setForm('location', e.target.value),
       fitHasPrefs: this.hasPrefs(benPrefsId),
       fitBusiness: benMember ? benMember.businessName : '',
       fitWants: benPrefs.wants,
@@ -4160,7 +4379,7 @@ class Component extends DCLogic {
           label: (m2.businessOwnerName || m2.fullName) + (m2.id === me.id ? ' (me)' : '')
         })),
       showServicePicker: !!st.form.beneficiaryId,
-      serviceOptions: [{ value: '', label: 'Select what they need' }]
+      serviceOptions: [{ value: '', label: 'Select a service' }]
         .concat(st.form.beneficiaryId ? this.serviceChoicesFor(+st.form.beneficiaryId).map(c2 => ({ value: c2.value, label: c2.label })) : []),
       formService: st.form.serviceKey,
       onFormService: e => setForm('serviceKey', e.target.value),
@@ -4169,7 +4388,7 @@ class Component extends DCLogic {
         const ch = this.serviceChoicesFor(+st.form.beneficiaryId);
         if (!ch.length) return 'This owner has not added a business yet.';
         if (ch.length === 1) return 'Going to ' + ch[0].label + '.';
-        return 'Pick the specific service the poster needs.';
+        return 'Services come from this owner\u2019s business profiles.';
       })(),
       formReview: st.form.review,
       reviewIsReview: st.form.review === 'review' && benPrefsId !== me.id,
@@ -4285,7 +4504,10 @@ class Component extends DCLogic {
         const fresh = this.isFreshAnn(x);
         return {
           title: x.title, message: x.message,
-          date: this.fmt(x.createdAt) + ' \u00b7 ' + this.ago(x.createdAt),
+          date: this.fmt(this.annPublishedAt(x)) + ' \u00b7 ' + this.ago(new Date(this.annPublishedAt(x)).toISOString()),
+          expiryNote: this.annExpiryNote(x),
+          dismissLabel: isDismissed(x.id) ? 'Show on Home' : 'Dismiss',
+          onDismiss: () => this.dismissAnn(x.id, !isDismissed(x.id)),
           pinned: !!x.pinned, isNew: fresh,
           open, openAttr: open ? 'true' : 'false',
           clamp: open ? 'unset' : '2',
@@ -4298,7 +4520,12 @@ class Component extends DCLogic {
             this.setState({ expandedAnn: open ? null : x.id });
           },
           onPin: () => this.send('/api/admin/announcements/pin', { id: x.id, pinned: !x.pinned }),
-          onEdit: () => this.setState({ annForm: { id: x.id, title: x.title, message: x.message, pinned: !!x.pinned }, annError: '' }),
+          onEdit: () => this.setState({
+            annForm: {
+              id: x.id, ctx: 'admin', title: x.title, message: x.message, pinned: !!x.pinned,
+              expiresAt: x.expiresAt ? this.ymd(Date.parse(x.expiresAt)) : ''
+            }, annError: ''
+          }),
           onDelete: () => this.setState({
             confirm: {
               title: 'Delete this announcement?',
@@ -4314,8 +4541,11 @@ class Component extends DCLogic {
       }),
       noAnn: annList.length === 0,
       canPost: true,
-      onNewAnn: () => this.setState({ annForm: { id: null, ctx: 'member', title: '', message: '', pinned: false }, annError: '' }),
-      onNewAnnAdmin: () => this.setState({ annForm: { id: null, ctx: 'admin', title: '', message: '', pinned: false }, annError: '' }),
+      onNewAnn: () => this.setState({ annForm: { id: null, ctx: 'member', title: '', message: '', pinned: false, expiresAt: '' }, annError: '' }),
+      onNewAnnAdmin: () => this.setState({ annForm: { id: null, ctx: 'admin', title: '', message: '', pinned: false, expiresAt: '' }, annError: '' }),
+      annExpires: st.annForm ? (st.annForm.expiresAt || '') : '',
+      annExpiresMin: this.ymd(this.now()),
+      onAnnExpires: e => this.setState({ annForm: { ...st.annForm, expiresAt: e.target.value }, annError: '' }),
       annCtxAdmin: !!(st.annForm && st.annForm.ctx === 'admin'),
       annFormOpen: !!st.annForm,
       annFormLabel: st.annForm && st.annForm.id ? 'Edit announcement' : 'New announcement',
@@ -4337,7 +4567,15 @@ class Component extends DCLogic {
         const now = this.stamp();
         const direct = isAdmin && f.ctx === 'admin';
         const path = direct ? '/api/admin/announcements' : '/api/announcements';
-        this.send(path, { id: f.id || undefined, title: f.title, message: f.message, pinned: !!f.pinned },
+        // A blank date means the Worker applies the 30-day default.
+        let expiresAt = '';
+        if (direct && f.expiresAt) {
+          const t = Date.parse(f.expiresAt + 'T23:59:59');
+          if (!t) { this.setState({ annError: 'That expiration date is not valid.' }); return; }
+          if (t <= this.now()) { this.setState({ annError: 'Choose an expiration date in the future.' }); return; }
+          expiresAt = new Date(t).toISOString();
+        }
+        this.send(path, { id: f.id || undefined, title: f.title, message: f.message, pinned: !!f.pinned, expiresAt },
           f.id ? 'Announcement updated' : direct ? 'Announcement published' : 'Sent to the admins for approval')
           .then(done => { if (done) this.setState({ annForm: null, annError: '' }); });
       },
@@ -4359,14 +4597,23 @@ class Component extends DCLogic {
       hasMySubs: (db.announcements || []).some(x => x.submittedById === me.id && (x.status || 'published') !== 'published'),
       approvedNote: (db.announcements || []).some(x => x.submittedById === me.id && x.status === 'published' && x.approvedById && x.approvedById !== me.id)
         ? 'Your approved announcements appear in the list above.' : '',
-      adminAnnItems: annList.map(x => ({
+      adminAnnItems: publishedAnn.map(x => {
+        const expired = this.isAnnExpired(x);
+        return {
         title: x.title, message: x.message,
-        date: this.fmt(x.createdAt),
+        date: 'Published ' + this.fmt(this.annPublishedAt(x)),
+        expiryNote: this.annExpiryNote(x),
+        stateLabel: expired ? 'Expired' : 'Active',
+        stateBg: expired ? '#f0efec' : 'oklch(0.95 0.05 155)',
+        stateFg: expired ? '#6b6d70' : 'oklch(0.38 0.1 155)',
         pinned: !!x.pinned,
         pinLabel: x.pinned ? 'Unpin' : 'Pin',
         onPin: () => this.send('/api/admin/announcements/pin', { id: x.id, pinned: !x.pinned }),
         onEdit: () => this.setState({
-          annForm: { id: x.id, ctx: 'admin', title: x.title, message: x.message, pinned: !!x.pinned }, annError: ''
+          annForm: {
+            id: x.id, ctx: 'admin', title: x.title, message: x.message, pinned: !!x.pinned,
+            expiresAt: x.expiresAt ? this.ymd(Date.parse(x.expiresAt)) : ''
+          }, annError: ''
         }),
         onDelete: () => this.setState({
           confirm: {
@@ -4379,7 +4626,8 @@ class Component extends DCLogic {
             }
           }
         })
-      })),
+        };
+      }),
       adminPendingRows: (db.announcements || []).filter(x => x.status === 'pending')
         .sort((p, n) => Date.parse(p.createdAt) - Date.parse(n.createdAt))
         .map(x => {
@@ -4407,13 +4655,28 @@ class Component extends DCLogic {
       onAnnDeclineText: e => this.setState({ annDeclineText: e.target.value.slice(0, 120) }),
       adminPendingEmpty: !(db.announcements || []).some(x => x.status === 'pending'),
       adminPendingCount: (db.announcements || []).filter(x => x.status === 'pending').length,
-      homeAnn: annList.slice(0, 2).map(x => ({
-        title: x.title, date: this.fmt(x.createdAt),
+      homeAnn: homeAnnList.map(x => ({
+        title: x.title, date: this.fmt(this.annPublishedAt(x)),
         isNew: this.isFreshAnn(x), pinned: !!x.pinned,
         bg: this.isFreshAnn(x) ? 'oklch(0.975 0.04 92)' : 'rgba(255,255,255,0.72)',
-        onClick: () => this.setState({ screen: 'announcements', expandedAnn: x.id, menuOpen: false })
+        dismissAria: 'Clear \u201c' + x.title + '\u201d from my Home screen',
+        onDismiss: () => this.dismissAnn(x.id, true),
+        onClick: () => {
+          this.markAnnViewed(unread.map(a2 => a2.id));
+          this.setState({ screen: 'announcements', expandedAnn: x.id, menuOpen: false });
+        }
       })),
-      hasHomeAnn: annList.length > 0,
+      hasHomeAnn: homeAnnList.length > 0,
+      // A nudge is deliberately its own card, not another grey alert.
+      homeNudges: myNudges.slice(0, 2).map(n => {
+        const from = this.member(n.senderId);
+        return {
+          message: n.message || 'Jump back in and help the team \u2014 there are opportunities waiting on you.',
+          meta: 'Sent by ' + (from ? from.fullName : 'an administrator') + ' \u00b7 ' + this.ago(n.createdAt),
+          onAction: () => this.setState({ screen: 'opps', oppTab: 'open', menuOpen: false }),
+          onDismiss: () => this.dismissNudge(n.id)
+        };
+      }),
       chapterLeaders: this.leadershipDefs()
         .map(d => ({ key: d[0], role: d[1], id: (db.leadership || {})[d[0]] }))
         .filter(r => r.id && this.member(r.id) && this.member(r.id).status === 'active')
@@ -4454,10 +4717,7 @@ class Component extends DCLogic {
             }
           };
         }),
-        (db.nudges || []).some(n => n.recipientId === me.id)
-          && (db.nudges || []).filter(n => n.recipientId === me.id)
-            .reduce((acc, n) => Math.max(acc, Date.parse(n.createdAt)), 0) > (s.lastAt || 0)
-          ? [{ text: 'You have Team Rockstars opportunities waiting for you. Jump back in and help the team!' }] : [],
+        [],
         pendingShares.length
           ? [{ text: pendingShares.length === 1 ? 'A member shared a tag with you \u2014 review it on the Opportunities tab.' : pendingShares.length + ' members shared tags with you \u2014 review them on the Opportunities tab.' }] : [],
         db.opportunities
@@ -4474,7 +4734,7 @@ class Component extends DCLogic {
       ),
 
       // profile
-      pName: pf.name, pOwner: pf.owner, pEmail: me.email,
+      pName: pf.name, pEmail: me.email,
       profilePhotoImg: me.avatar ? React.createElement('img', { src: me.avatar, alt: 'Your profile photo', decoding: 'async', style: { width: 52, height: 52, borderRadius: 27, objectFit: 'cover', display: 'block' } }) : null,
       avatarDraftImg: st.avatarDraft ? React.createElement('img', { src: st.avatarDraft, alt: 'New profile photo preview', decoding: 'async', style: { flex: 'none', width: 52, height: 52, borderRadius: 27, objectFit: 'cover', display: 'block' } }) : null,
       pInitials: this.initials(me.fullName),
@@ -4505,10 +4765,9 @@ class Component extends DCLogic {
       basicsOpen: st.basicsOpen,
       onToggleBasics: () => this.setState({ basicsOpen: !st.basicsOpen, profile: null }),
       onPName: e => this.setState({ profile: { ...pf, name: e.target.value } }),
-      onPOwner: e => this.setState({ profile: { ...pf, owner: e.target.value } }),
       onSaveProfile: () => {
         if (!pf.name.trim()) { this.flash('Your name is required'); return; }
-        this.send('/api/profile', { fullName: pf.name, businessOwnerName: pf.owner }, 'Profile updated', 'PATCH')
+        this.send('/api/profile', { fullName: pf.name }, 'Profile updated', 'PATCH')
           .then(done => { if (done) this.setState({ profile: null, basicsOpen: false }); });
       },
       bizRows: this.businessesOf(me.id).map(b => {
@@ -4561,7 +4820,9 @@ class Component extends DCLogic {
               id: b.id, name: b.name, industry: b.industry || '', website: b.website || '',
               city: b.city || '', radius: b.radius || 'none', serviceState: b.serviceState || '',
               wants: (b.wants || []).join(', '), notWants: (b.notWants || []).join(', '),
-              preferred: (b.preferred || []).join(', '), avoid: (b.avoid || []).join(', ')
+              preferred: (b.preferred || []).join(', '), avoid: (b.avoid || []).join(', '),
+              services: this.servicesOf(b.id).map(sv => ({ id: sv.id, name: sv.name })),
+              svcDraft: ''
             }, bizError: '', expandedBiz: null
           }),
           onPrimary: () => this.setPrimaryBusiness(b.id),
@@ -4596,9 +4857,21 @@ class Component extends DCLogic {
       bfAvoid: st.bizForm ? st.bizForm.avoid : '',
       bizError: st.bizError,
       onNewBiz: () => this.setState({
-        bizForm: { id: null, name: '', industry: '', website: '', city: '', radius: 'none', serviceState: '', wants: '', notWants: '', preferred: '', avoid: '' },
+        bizForm: { id: null, name: '', industry: '', website: '', city: '', radius: 'none', serviceState: '', wants: '', notWants: '', preferred: '', avoid: '', services: [], svcDraft: '' },
         bizError: '', expandedBiz: null
       }),
+      bfServices: (st.bizForm ? st.bizForm.services || [] : []).map((sv, i) => ({
+        name: sv.name,
+        removeAria: 'Remove service ' + sv.name,
+        onRemove: () => this.setState({
+          bizForm: { ...st.bizForm, services: (st.bizForm.services || []).filter((x, j) => j !== i) }
+        })
+      })),
+      bfHasServices: (st.bizForm ? (st.bizForm.services || []).length : 0) > 0,
+      bfSvcDraft: st.bizForm ? (st.bizForm.svcDraft || '') : '',
+      onBfSvcDraft: e => this.setState({ bizForm: { ...st.bizForm, svcDraft: e.target.value } }),
+      onBfSvcKey: e => { if (e.key === 'Enter') { e.preventDefault(); addBizService(); } },
+      onBfAddService: () => addBizService(),
       onBfName: e => this.setState({ bizForm: { ...st.bizForm, name: e.target.value }, bizError: '' }),
       onBfIndustry: e => this.setState({ bizForm: { ...st.bizForm, industry: e.target.value } }),
       onBfWebsite: e => this.setState({ bizForm: { ...st.bizForm, website: e.target.value } }),
@@ -4622,6 +4895,12 @@ class Component extends DCLogic {
       onSaveBiz: () => {
         const f = st.bizForm;
         if (!f.name.trim()) { this.setState({ bizError: 'Enter the business name.' }); return; }
+        // A service still sitting in the input is included rather than lost.
+        const pendingSvc = (f.svcDraft || '').trim();
+        const services = (f.services || []).slice();
+        if (pendingSvc && !services.some(sv => sv.name.toLowerCase() === pendingSvc.toLowerCase())) {
+          services.push({ id: null, name: pendingSvc.slice(0, 80) });
+        }
         if (f.radius === 'statewide' && !f.serviceState) {
           this.setState({ bizError: 'Choose which state you serve.' }); return;
         }
@@ -4630,7 +4909,8 @@ class Component extends DCLogic {
           city: f.city.trim(), radius: f.radius || 'none',
           serviceState: f.radius === 'statewide' ? f.serviceState : '',
           wants: splitList(f.wants), notWants: splitList(f.notWants),
-          preferred: splitList(f.preferred), avoid: splitList(f.avoid)
+          preferred: splitList(f.preferred), avoid: splitList(f.avoid),
+          services
         });
       },
       onLogOut: () => this.signOut(),
@@ -4728,7 +5008,7 @@ class Component extends DCLogic {
           const archived = !!o.archivedAt;
           return {
             business: o.businessDisplayName,
-            meta: (sub ? sub.fullName.split(' ')[0] : 'Removed') + ' \u00b7 ' + this.fmt(o.createdAt) + ' \u00b7 ' + (o.facebookGroupName || 'No group'),
+            meta: [(sub ? sub.fullName.split(' ')[0] : 'Removed'), this.fmt(o.createdAt), o.facebookGroupName].filter(Boolean).join(' \u00b7 '),
             hasService: !!o.serviceName,
             serviceName: o.serviceName || '',
             hasLooking: !!o.notes,
