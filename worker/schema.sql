@@ -125,7 +125,10 @@ CREATE TABLE IF NOT EXISTS opportunities (
   business_id           INTEGER REFERENCES businesses(id) ON DELETE SET NULL,
   business_display_name TEXT    NOT NULL,        -- snapshot at submit time
   submitted_by_id       INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  -- The submitted post link. Named for history; platform says which site it
+  -- points at ('facebook' or 'nextdoor'; blank/legacy rows mean Facebook).
   facebook_url          TEXT    NOT NULL,
+  platform              TEXT    NOT NULL DEFAULT 'facebook',
   facebook_group_name   TEXT    NOT NULL DEFAULT '',
   location              TEXT    NOT NULL DEFAULT '',
   -- Public "what are they looking for?" summary, shown to the whole team.
@@ -139,9 +142,14 @@ CREATE TABLE IF NOT EXISTS opportunities (
   reviewed_at           TEXT,
   decline_reason        TEXT    NOT NULL DEFAULT '',
   created_at            TEXT    NOT NULL DEFAULT (datetime('now')),
+  -- When the post stopped needing tags. The 12-month retention clock for an
+  -- archived post runs from here; archived_at is when it left the active view.
+  completed_at          TEXT,
   archived_at           TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_opp_status ON opportunities(status, archived_at);
+CREATE INDEX IF NOT EXISTS idx_opp_archived ON opportunities(archived_at);
+CREATE INDEX IF NOT EXISTS idx_opp_completed ON opportunities(completed_at);
 CREATE INDEX IF NOT EXISTS idx_opp_benef ON opportunities(beneficiary_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_opp_url ON opportunities(facebook_url)
   WHERE archived_at IS NULL;
@@ -162,6 +170,7 @@ CREATE TABLE IF NOT EXISTS member_opportunity_status (
 );
 CREATE INDEX IF NOT EXISTS idx_mos_member ON member_opportunity_status(member_id, status);
 CREATE INDEX IF NOT EXISTS idx_mos_completed ON member_opportunity_status(completed_at);
+CREATE INDEX IF NOT EXISTS idx_mos_opp ON member_opportunity_status(opportunity_id, status);
 
 -- ------------------------------------------------------- saved comments -----
 -- Private to the authoring member; never readable by anyone else.
@@ -210,6 +219,7 @@ CREATE TABLE IF NOT EXISTS announcement_reads (
   dismissed_at    TEXT,
   PRIMARY KEY (announcement_id, member_id)
 );
+CREATE INDEX IF NOT EXISTS idx_annreads_dismiss ON announcement_reads(dismissed_at);
 
 -- ---------------------------------------------------------- leadership ------
 -- Chapter titles, deliberately separate from the admin role.
@@ -272,6 +282,7 @@ CREATE TABLE IF NOT EXISTS nudges (
   dismissed_at TEXT,                                -- member cleared the reminder
   created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX IF NOT EXISTS idx_nudges_dismiss ON nudges(dismissed_at);
 CREATE INDEX IF NOT EXISTS idx_nudge_recipient ON nudges(recipient_id, created_at);
 
 -- ------------------------------------------------ monthly participation -----
@@ -290,6 +301,29 @@ CREATE TABLE IF NOT EXISTS monthly_participation (
   closed_at       TEXT,
   PRIMARY KEY (month_key, member_id)
 );
+
+-- ---------------------------------------------------------- retention ------
+-- Written by the nightly cleanup job. See migrations/008_data_retention.sql.
+
+-- Aggregate nudge history, kept after individual nudge rows are deleted.
+CREATE TABLE IF NOT EXISTS nudge_stats (
+  month_key    TEXT    NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  sent         INTEGER NOT NULL DEFAULT 0,
+  viewed       INTEGER NOT NULL DEFAULT 0,
+  dismissed    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (month_key, recipient_id)
+);
+
+-- One row per cleanup run: counts only, never member data or message text.
+CREATE TABLE IF NOT EXISTS retention_runs (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  ran_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  summary TEXT NOT NULL,
+  ok      INTEGER NOT NULL DEFAULT 1,
+  note    TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_retention_ran ON retention_runs(ran_at);
 
 -- Chapter-wide settings, so the tag goal is not baked into the front end.
 CREATE TABLE IF NOT EXISTS settings (

@@ -368,6 +368,8 @@ async function bootstrap(me, env) {
       id: o.id, beneficiaryId: o.beneficiary_id, businessId: o.business_id,
       businessDisplayName: o.business_display_name, submittedById: o.submitted_by_id,
       facebookUrl: o.facebook_url, facebookGroupName: o.facebook_group_name,
+      // Records written before Nextdoor support have no platform: Facebook.
+      platform: (('platform' in o) && o.platform === 'nextdoor') ? 'nextdoor' : 'facebook',
       location: o.location, status: o.status,
       serviceId: ('service_id' in o) ? o.service_id : null,
       serviceName: ('service_name' in o) ? (o.service_name || '') : '',
@@ -726,8 +728,19 @@ const routes = {
     const me = await requireMember(request, env);
     const b = await readJson(request);
     const url = clean(b.facebookUrl);
-    if (!/^https?:\/\/([\w-]+\.)?(facebook\.com|fb\.com|fb\.me)\/.+/i.test(url)) {
-      throw { status: 400, error: 'That does not look like a Facebook post link.' };
+    const platform = b.platform === 'nextdoor' ? 'nextdoor' : 'facebook';
+    const PLATFORMS = {
+      facebook: { label: 'Facebook', test: /^https:\/\/([\w-]+\.)*(facebook\.com|fb\.com|fb\.me)\/.+/i },
+      // Nextdoor post paths vary; the host is what is validated.
+      nextdoor: { label: 'Nextdoor', test: /^https:\/\/([\w-]+\.)*nextdoor\.[a-z.]{2,}\/.+/i }
+    };
+    if (!/^https:\/\//i.test(url)) throw { status: 400, error: 'The link must start with https://' };
+    if (!PLATFORMS[platform].test.test(url)) {
+      throw {
+        status: 400,
+        error: 'This link doesn’t look like a ' + PLATFORMS[platform].label
+          + ' link. Please check the URL or change the platform.'
+      };
     }
     const beneficiaryId = +b.beneficiaryId || me.id;
     const beneficiary = await env.DB.prepare(`SELECT * FROM members WHERE id = ?1 AND status = 'active'`)
@@ -737,33 +750,47 @@ const routes = {
     const dupe = await env.DB.prepare(
       `SELECT id FROM opportunities WHERE facebook_url = ?1 AND archived_at IS NULL`
     ).bind(url).first();
-    if (dupe && !b.force) throw { status: 409, error: 'This Facebook post has already been submitted.' };
+    if (dupe && !b.force) throw { status: 409, error: 'This post has already been submitted.' };
 
     const sendForReview = !!b.sendForReview && beneficiaryId !== me.id;
     const cols = [beneficiaryId, +b.businessId || null,
                   clean(b.businessDisplayName) || beneficiary.full_name,
                   me.id, url, clean(b.facebookGroupName), clean(b.location),
                   sendForReview ? 'pending_review' : 'active', clean(b.reviewNote)];
+    // Optional columns arrive with later migrations. Try the fullest insert
+    // first and step down, so a database missing 007 (or 003/004) still accepts
+    // the submission instead of failing.
+    const extras = [clean(b.notes).slice(0, 300), +b.serviceId || null,
+                    clean(b.serviceName).slice(0, 120)];
+    const missingCol = e => /no such column|has no column/i.test(String((e && e.message) || e));
     let res;
     try {
       res = await env.DB.prepare(
         `INSERT INTO opportunities
            (beneficiary_id, business_id, business_display_name, submitted_by_id,
             facebook_url, facebook_group_name, location, status, review_note,
-            opportunity_summary, service_id, service_name)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)`
-      ).bind(...cols, clean(b.notes).slice(0, 300),
-             +b.serviceId || null, clean(b.serviceName).slice(0, 120)).run();
+            opportunity_summary, service_id, service_name, platform)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)`
+      ).bind(...cols, ...extras, platform).run();
     } catch (e) {
-      // Databases without migrations 003/004 applied lack these columns — still
-      // accept the submission without them.
-      if (!/opportunity_summary|service_id|service_name|no such column/i.test(String((e && e.message) || e))) throw e;
-      res = await env.DB.prepare(
-        `INSERT INTO opportunities
-           (beneficiary_id, business_id, business_display_name, submitted_by_id,
-            facebook_url, facebook_group_name, location, status, review_note)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`
-      ).bind(...cols).run();
+      if (!missingCol(e)) throw e;
+      try {
+        res = await env.DB.prepare(
+          `INSERT INTO opportunities
+             (beneficiary_id, business_id, business_display_name, submitted_by_id,
+              facebook_url, facebook_group_name, location, status, review_note,
+              opportunity_summary, service_id, service_name)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)`
+        ).bind(...cols, ...extras).run();
+      } catch (e2) {
+        if (!missingCol(e2)) throw e2;
+        res = await env.DB.prepare(
+          `INSERT INTO opportunities
+             (beneficiary_id, business_id, business_display_name, submitted_by_id,
+              facebook_url, facebook_group_name, location, status, review_note)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`
+        ).bind(...cols).run();
+      }
     }
 
     // Fan out one status row per active member, so "missed" is computable later.
@@ -1050,6 +1077,25 @@ const routes = {
    * Edit an existing member. Names live only on members / businesses, so every
    * screen picks the change up from the next bootstrap — no cached copies.
    */
+  /** Run the nightly retention pass now. Same code path as the cron. */
+  'POST /api/admin/retention/run': async (request, env) => {
+    await requireAdmin(request, env);
+    const summary = await runRetention(env, 'manual');
+    return ok(env, request, { summary });
+  },
+
+  /** Recent retention runs — counts only, for diagnosing a failed cleanup. */
+  'GET /api/admin/retention': async (request, env) => {
+    await requireAdmin(request, env);
+    let runs = { results: [] };
+    try {
+      runs = await env.DB.prepare(
+        `SELECT id, ran_at, summary, ok, note FROM retention_runs ORDER BY ran_at DESC LIMIT 20`
+      ).all();
+    } catch (e) { runs = { results: [] }; }
+    return ok(env, request, { runs: runs.results });
+  },
+
   'POST /api/admin/members/update': async (request, env) => {
     await requireAdmin(request, env);
     const b = await readJson(request);
@@ -1383,14 +1429,278 @@ async function fanOut(env, opportunityId, beneficiaryId) {
   ).bind(opportunityId, m.id)));
 }
 
-/** Opportunistic cleanup so expired rows do not accumulate. */
-async function sweep(env) {
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM sessions WHERE expires_at < datetime('now')`),
-    env.DB.prepare(`DELETE FROM login_codes WHERE expires_at < datetime('now','-1 hour')`),
-    env.DB.prepare(`DELETE FROM reset_tokens WHERE expires_at < datetime('now','-1 day')`),
-    env.DB.prepare(`DELETE FROM reset_requests WHERE created_at < datetime('now','-1 day')`)
-  ]);
+/* =========================== data retention ============================== *
+ * One scheduled job, once a day. Every step is a bounded, indexed date-range
+ * delete and is safe to run repeatedly: re-running finds nothing left to do.
+ *
+ * Ordering matters and is deliberate:
+ *   1. snapshot every closed month into monthly_participation
+ *   2. roll old nudge rows into nudge_stats
+ *   3. archive fully-resolved opportunities
+ *   4. delete expired auth rows and stale per-member state
+ *   5. purge archived opportunities older than 12 months, and ONLY those whose
+ *      months are all snapshotted, so history can never shift underneath us
+ *
+ * Never touched: members, businesses, services, saved comments, leadership,
+ * group membership, settings, active announcements, active nudges, open
+ * opportunities, monthly_participation, nudge_stats.
+ * ------------------------------------------------------------------------- */
+
+const RETENTION = {
+  alertDismissalDays: 60,   // opportunity review alert records
+  annDismissDays: 30,       // per-member announcement dismissals
+  nudgeDismissDays: 30,     // dismissed nudges (aggregate kept)
+  authDays: 3,              // spent/expired login codes and sessions
+  staleStateDays: 30,       // stale per-member notification-ish rows
+  archiveAfterDays: 30,     // fully-resolved posts become archived
+  purgeMonths: 12           // archived posts may then be purged
+};
+
+const monthKeyOf = iso => String(iso || '').slice(0, 7);
+
+/** Every month with activity, oldest first, excluding the current month. */
+async function closableMonths(env) {
+  const now = new Date();
+  const current = now.toISOString().slice(0, 7);
+  const rows = await env.DB.prepare(
+    `SELECT DISTINCT substr(created_at,1,7) AS m FROM opportunities
+      UNION SELECT DISTINCT substr(completed_at,1,7) FROM member_opportunity_status
+       WHERE completed_at IS NOT NULL`
+  ).all();
+  return (rows.results || [])
+    .map(r => r.m)
+    .filter(m => m && m < current)
+    .sort();
+}
+
+/**
+ * Write (or refresh) the ranking snapshot for one closed month. Computed from
+ * the same rules the app uses: tags by completion date, posts by submission
+ * date. Idempotent — re-running a month rewrites identical numbers.
+ */
+async function snapshotMonth(env, monthKey) {
+  const goalRow = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'monthly_tag_goal'`).first();
+  const goal = +((goalRow && goalRow.value) || 25);
+  const rows = await env.DB.prepare(
+    `SELECT m.id AS member_id,
+            (SELECT COUNT(*) FROM member_opportunity_status s
+              WHERE s.member_id = m.id AND s.status = 'completed'
+                AND substr(s.completed_at,1,7) = ?1)                       AS tags_completed,
+            (SELECT COUNT(*) FROM opportunities o
+              WHERE o.submitted_by_id = m.id AND o.status = 'active'
+                AND substr(o.created_at,1,7) = ?1)                         AS posts_found,
+            (SELECT COUNT(*) FROM member_opportunity_status s
+              WHERE s.member_id = m.id AND s.status <> 'unable'
+                AND substr(s.eligible_from,1,7) = ?1)                      AS eligible,
+            (SELECT COUNT(*) FROM member_opportunity_status s
+              WHERE s.member_id = m.id AND s.status = 'open'
+                AND substr(s.eligible_from,1,7) = ?1)                      AS missed
+       FROM members m`
+  ).bind(monthKey).all();
+
+  const list = (rows.results || []).slice().sort((a, b) =>
+    b.tags_completed - a.tags_completed || b.posts_found - a.posts_found || a.member_id - b.member_id);
+  let rank = 0, prev = null;
+  const stmts = list.map((r, i) => {
+    if (r.tags_completed !== prev) { rank = i + 1; prev = r.tags_completed; }
+    return env.DB.prepare(
+      `INSERT INTO monthly_participation
+         (month_key, member_id, tags_completed, posts_found, eligible, missed, rank, goal, closed_at)
+       VALUES (?1,?2,?3,?4,?5,?6,?7,?8, datetime('now'))
+       ON CONFLICT (month_key, member_id) DO UPDATE SET
+         tags_completed = excluded.tags_completed, posts_found = excluded.posts_found,
+         eligible = excluded.eligible, missed = excluded.missed, rank = excluded.rank,
+         goal = excluded.goal, closed_at = COALESCE(monthly_participation.closed_at, excluded.closed_at)`
+    ).bind(monthKey, r.member_id, r.tags_completed, r.posts_found, r.eligible, r.missed, rank, goal);
+  });
+  if (stmts.length) await env.DB.batch(stmts);
+  return stmts.length;
+}
+
+/** True when every month this opportunity touches already has a snapshot. */
+async function monthsSnapshotted(env, opp) {
+  const months = new Set([monthKeyOf(opp.created_at)]);
+  if (opp.completed_at) months.add(monthKeyOf(opp.completed_at));
+  if (opp.archived_at) months.add(monthKeyOf(opp.archived_at));
+  const done = await env.DB.prepare(
+    `SELECT DISTINCT substr(completed_at,1,7) AS m FROM member_opportunity_status
+      WHERE opportunity_id = ?1 AND completed_at IS NOT NULL`
+  ).bind(opp.id).all();
+  (done.results || []).forEach(r => r.m && months.add(r.m));
+  for (const m of months) {
+    const snap = await env.DB.prepare(
+      `SELECT 1 FROM monthly_participation WHERE month_key = ?1 AND closed_at IS NOT NULL LIMIT 1`
+    ).bind(m).first();
+    if (!snap) return false;
+  }
+  return true;
+}
+
+/**
+ * The nightly retention pass. Returns the counts it acted on; throws only on
+ * unexpected errors (a missing column from an unapplied migration is skipped,
+ * not fatal, so an out-of-date database still gets the cleanup it can do).
+ */
+async function retentionSweep(env) {
+  const out = {
+    monthsSnapshotted: 0, nudgesAggregated: 0, opportunitiesArchived: 0,
+    loginCodes: 0, sessions: 0, resetTokens: 0, resetRequests: 0,
+    alertDismissals: 0, announcementStatus: 0, nudges: 0,
+    staleStatusRows: 0, opportunitiesPurged: 0, skipped: []
+  };
+  const D = RETENTION;
+  // A step whose table/column predates its migration is skipped, never fatal.
+  const step = async (name, fn) => {
+    try { return await fn(); }
+    catch (e) {
+      if (/no such table|no such column/i.test(String((e && e.message) || e))) {
+        out.skipped.push(name);
+        return 0;
+      }
+      throw e;
+    }
+  };
+  const del = (name, sql, binds) => step(name, async () => {
+    const res = await env.DB.prepare(sql).bind(...(binds || [])).run();
+    return (res.meta && res.meta.changes) || 0;
+  });
+
+  /* 1. history first — nothing below can shift a past month afterwards */
+  await step('snapshot', async () => {
+    for (const m of await closableMonths(env)) {
+      await snapshotMonth(env, m);
+      out.monthsSnapshotted++;
+    }
+  });
+
+  /* 2. aggregate nudges before their rows go */
+  out.nudgesAggregated = await step('nudgeStats', async () => {
+    const res = await env.DB.prepare(
+      `INSERT INTO nudge_stats (month_key, recipient_id, sent, viewed, dismissed)
+       SELECT substr(created_at,1,7), recipient_id, COUNT(*),
+              SUM(CASE WHEN viewed_at IS NOT NULL THEN 1 ELSE 0 END),
+              SUM(CASE WHEN dismissed_at IS NOT NULL THEN 1 ELSE 0 END)
+         FROM nudges
+        GROUP BY substr(created_at,1,7), recipient_id
+       ON CONFLICT (month_key, recipient_id) DO UPDATE SET
+         sent = excluded.sent, viewed = excluded.viewed, dismissed = excluded.dismissed`
+    ).run();
+    return (res.meta && res.meta.changes) || 0;
+  });
+
+  /* 3. archive posts nobody can act on any more (never deletes them) */
+  out.opportunitiesArchived = await step('archive', async () => {
+    const res = await env.DB.prepare(
+      `UPDATE opportunities
+          SET archived_at = datetime('now'),
+              completed_at = COALESCE(completed_at, (
+                SELECT MAX(COALESCE(s.completed_at, s.status_changed_at))
+                  FROM member_opportunity_status s WHERE s.opportunity_id = opportunities.id))
+        WHERE archived_at IS NULL
+          AND status = 'active'
+          AND created_at < datetime('now', ?1)
+          AND EXISTS (SELECT 1 FROM member_opportunity_status s WHERE s.opportunity_id = opportunities.id)
+          AND NOT EXISTS (SELECT 1 FROM member_opportunity_status s
+                           WHERE s.opportunity_id = opportunities.id AND s.status = 'open')`
+    ).bind('-' + D.archiveAfterDays + ' days').run();
+    return (res.meta && res.meta.changes) || 0;
+  });
+
+  /* 4. expired auth material and stale per-member state */
+  out.loginCodes = await del('loginCodes',
+    `DELETE FROM login_codes
+      WHERE (used_at IS NOT NULL AND used_at < datetime('now', ?1))
+         OR expires_at < datetime('now', ?1)`, ['-' + D.authDays + ' days']);
+  out.sessions = await del('sessions',
+    `DELETE FROM sessions WHERE expires_at < datetime('now', ?1)`, ['-' + D.authDays + ' days']);
+  out.resetTokens = await del('resetTokens',
+    `DELETE FROM reset_tokens
+      WHERE (used_at IS NOT NULL AND used_at < datetime('now', ?1))
+         OR expires_at < datetime('now', ?1)`, ['-' + D.authDays + ' days']);
+  out.resetRequests = await del('resetRequests',
+    `DELETE FROM reset_requests WHERE created_at < datetime('now','-1 day')`);
+
+  // Review-alert dismissals: the alert stops rendering after 24 hours anyway,
+  // so after 60 days the record has no job left. The opportunity and its
+  // review decision are untouched.
+  out.alertDismissals = await del('alertDismissals',
+    `DELETE FROM alert_dismissals WHERE dismissed_at < datetime('now', ?1)`,
+    ['-' + D.alertDismissalDays + ' days']);
+
+  // Per-member announcement rows: only dismissed ones, and only where the
+  // announcement itself is already expired, so a live announcement never
+  // reappears for someone who cleared it.
+  out.announcementStatus = await del('announcementStatus',
+    `DELETE FROM announcement_reads
+      WHERE dismissed_at IS NOT NULL
+        AND dismissed_at < datetime('now', ?1)
+        AND announcement_id IN (
+          SELECT id FROM announcements
+           WHERE COALESCE(expires_at,
+                          datetime(COALESCE(published_at, approved_at, created_at), '+30 days'))
+                 < datetime('now'))`,
+    ['-' + D.annDismissDays + ' days']);
+
+  // Dismissed nudges only. Unread and viewed-but-active nudges stay.
+  out.nudges = await del('nudges',
+    `DELETE FROM nudges WHERE dismissed_at IS NOT NULL AND dismissed_at < datetime('now', ?1)`,
+    ['-' + D.nudgeDismissDays + ' days']);
+
+  // Orphaned per-member rows whose opportunity is already gone.
+  out.staleStatusRows = await del('staleStatusRows',
+    `DELETE FROM member_opportunity_status
+      WHERE opportunity_id NOT IN (SELECT id FROM opportunities)`);
+
+  /* 5. purge long-archived posts, one at a time, snapshot-checked */
+  await step('purge', async () => {
+    const old = await env.DB.prepare(
+      `SELECT id, created_at, completed_at, archived_at FROM opportunities
+        WHERE archived_at IS NOT NULL
+          AND archived_at < datetime('now', ?1)
+          AND NOT EXISTS (SELECT 1 FROM member_opportunity_status s
+                           WHERE s.opportunity_id = opportunities.id AND s.status = 'open')
+        ORDER BY archived_at LIMIT 200`
+    ).bind('-' + D.purgeMonths + ' months').all();
+    for (const o of (old.results || [])) {
+      if (!(await monthsSnapshotted(env, o))) continue;
+      // Children first, then the row itself, in one batch — an interrupted run
+      // can never leave status rows pointing at a deleted opportunity.
+      await env.DB.batch([
+        env.DB.prepare(`DELETE FROM member_opportunity_status WHERE opportunity_id = ?1`).bind(o.id),
+        env.DB.prepare(`DELETE FROM alert_dismissals WHERE kind = 'opp_review' AND ref_id = ?1`).bind(o.id),
+        env.DB.prepare(`DELETE FROM opportunities WHERE id = ?1`).bind(o.id)
+      ]);
+      out.opportunitiesPurged++;
+    }
+  });
+
+  return out;
+}
+
+/** Run the retention pass, record the outcome, and log a readable summary. */
+async function runRetention(env, trigger) {
+  let summary, ok = 1, note = '';
+  try {
+    summary = await retentionSweep(env);
+  } catch (e) {
+    ok = 0;
+    note = String((e && e.message) || e).slice(0, 300);
+    summary = { failed: true };
+  }
+  const lines = Object.keys(summary)
+    .filter(k => k !== 'skipped' && summary[k])
+    .map(k => '  - ' + k + ': ' + summary[k]);
+  console.log('Retention cleanup (' + (trigger || 'cron') + ')'
+    + (lines.length ? '\n' + lines.join('\n') : '\n  - nothing to clean')
+    + (summary.skipped && summary.skipped.length
+        ? '\n  - skipped (migration not applied): ' + summary.skipped.join(', ') : '')
+    + (ok ? '' : '\n  - FAILED: ' + note));
+  try {
+    await env.DB.prepare(
+      `INSERT INTO retention_runs (summary, ok, note) VALUES (?1, ?2, ?3)`
+    ).bind(JSON.stringify(summary), ok, note).run();
+  } catch (e) { /* migrations/008 not applied yet — the console log still stands */ }
+  return summary;
 }
 
 /* ------------------------------------------------------------------ entry --- */
@@ -1414,9 +1724,8 @@ export default {
     }
 
     try {
-      const res = await handler(request, env);
-      if (Math.random() < 0.02) ctx.waitUntil(sweep(env));
-      return res;
+      // No cleanup on the request path: retention is a single daily cron job.
+      return await handler(request, env);
     } catch (e) {
       if (e && e.status) return fail(env, request, e.status, e.error);
       console.error('unhandled', e && (e.stack || e.message || e));
@@ -1424,8 +1733,11 @@ export default {
     }
   },
 
-  /** Optional cron: snapshot the closing month so history never shifts. */
+  /**
+   * Daily cron (see wrangler.toml [triggers]). Snapshots closed months so
+   * historical rankings are fixed, then applies the retention rules.
+   */
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sweep(env));
+    ctx.waitUntil(runRetention(env, 'cron'));
   }
 };

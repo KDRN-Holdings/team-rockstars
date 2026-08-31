@@ -21,6 +21,8 @@ MAIL_FROM = "Team Rockstars <noreply@sculpt-rx.net>"
 # as a fallback for browsers that still accept it.
 COOKIE_SAMESITE = "None"
 
-# Housekeeping: expires sessions and spent reset tokens nightly.
+# Housekeeping: one daily data-retention pass (snapshots closed months, then
+# expires sessions, login codes, dismissed announcement/nudge rows, and purges
+# opportunities archived more than 12 months ago). See runRetention in src.
 [triggers]
 crons = ["17 4 * * *"]
