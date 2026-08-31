@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS members (
   full_name           TEXT    NOT NULL DEFAULT '',
   business_owner_name TEXT    NOT NULL DEFAULT '',
   avatar              TEXT,                       -- data URL, resized client-side
-  password_hash       TEXT,                       -- NULL until the member sets one
+  -- Unused since login moved to email codes. Retained for backward
+  -- compatibility; safe to drop once no legacy sessions matter.
+  password_hash       TEXT,
   password_salt       TEXT,
   password_iterations INTEGER,
   role                TEXT    NOT NULL DEFAULT 'member' CHECK (role IN ('member','admin')),
@@ -57,6 +59,23 @@ CREATE TABLE IF NOT EXISTS reset_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_reset_req ON reset_requests(email, created_at);
 
+
+-- ---------------------------------------------------------- login codes -----
+-- Passwordless email OTP. Only a SHA-256 of the 6-digit code is stored, so a
+-- database leak cannot be used to sign in. Codes are single-use, expire after
+-- 10 minutes, and are invalidated when a newer code is requested.
+
+CREATE TABLE IF NOT EXISTS login_codes (
+  code_hash  TEXT    PRIMARY KEY,              -- SHA-256 of the emailed code
+  member_id  INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  expires_at TEXT    NOT NULL,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  used_at    TEXT,                             -- non-NULL => single-use spent
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_code_member ON login_codes(member_id, used_at);
+CREATE INDEX IF NOT EXISTS idx_code_expiry ON login_codes(expires_at);
+
 -- -------------------------------------------------------------- businesses ---
 -- A member may run several businesses; exactly one is primary.
 -- Tag preferences are business-specific, never member-specific.
@@ -76,6 +95,17 @@ CREATE TABLE IF NOT EXISTS businesses (
   updated_at  TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_biz_member ON businesses(member_id, active);
+
+-- Services offered by a business. member -> businesses -> services.
+CREATE TABLE IF NOT EXISTS business_services (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  name        TEXT    NOT NULL,
+  description TEXT    NOT NULL DEFAULT '',
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_svc_biz ON business_services(business_id, active);
 
 -- One row per preference entry, so keywords stay queryable.
 CREATE TABLE IF NOT EXISTS business_preferences (
@@ -98,6 +128,10 @@ CREATE TABLE IF NOT EXISTS opportunities (
   facebook_url          TEXT    NOT NULL,
   facebook_group_name   TEXT    NOT NULL DEFAULT '',
   location              TEXT    NOT NULL DEFAULT '',
+  -- Public "what are they looking for?" summary, shown to the whole team.
+  opportunity_summary   TEXT    NOT NULL DEFAULT '',
+  service_id            INTEGER REFERENCES business_services(id) ON DELETE SET NULL,
+  service_name          TEXT    NOT NULL DEFAULT '',   -- snapshot at submit time
   status                TEXT    NOT NULL DEFAULT 'active'
                           CHECK (status IN ('active','pending_review','declined')),
   review_note           TEXT    NOT NULL DEFAULT '',   -- private, owner-only
@@ -118,7 +152,9 @@ CREATE TABLE IF NOT EXISTS member_opportunity_status (
   opportunity_id    INTEGER NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
   member_id         INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   status            TEXT    NOT NULL DEFAULT 'open'
-                      CHECK (status IN ('open','completed','not_member','join_pending','banned')),
+                      CHECK (status IN ('open','completed','not_member','join_pending','banned','unable')),
+  -- Free-text reason captured when a member marks a post 'unable'.
+  unable_reason     TEXT,
   eligible_from     TEXT    NOT NULL DEFAULT (datetime('now')),
   completed_at      TEXT,
   status_changed_at TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -136,6 +172,8 @@ CREATE TABLE IF NOT EXISTS saved_comments (
   business_member_id  INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   label               TEXT    NOT NULL DEFAULT '',
   text                TEXT    NOT NULL,
+  -- NULL = a general comment for the business, not tied to one service.
+  service_id          INTEGER REFERENCES business_services(id) ON DELETE SET NULL,
   created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT
 );
@@ -154,16 +192,22 @@ CREATE TABLE IF NOT EXISTS announcements (
   pinned           INTEGER NOT NULL DEFAULT 0,
   approved_by_id   INTEGER REFERENCES members(id) ON DELETE SET NULL,
   approved_at      TEXT,
+  published_at     TEXT,                            -- when it actually went live
+  expires_at       TEXT,                            -- admin choice; blank = +30 days
   decline_reason   TEXT    NOT NULL DEFAULT '',
   created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_ann_status ON announcements(status, pinned, created_at);
+CREATE INDEX IF NOT EXISTS idx_ann_expiry ON announcements(status, expires_at);
 
+-- Per-member announcement state. Viewed (badge) and dismissed (Home screen)
+-- are deliberately independent, and neither affects any other member.
 CREATE TABLE IF NOT EXISTS announcement_reads (
   announcement_id INTEGER NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
   member_id       INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   read_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+  dismissed_at    TEXT,
   PRIMARY KEY (announcement_id, member_id)
 );
 
@@ -224,6 +268,8 @@ CREATE TABLE IF NOT EXISTS nudges (
   recipient_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   message      TEXT    NOT NULL DEFAULT '',
   read_at      TEXT,
+  viewed_at    TEXT,                                -- member saw the nudge
+  dismissed_at TEXT,                                -- member cleared the reminder
   created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_nudge_recipient ON nudges(recipient_id, created_at);

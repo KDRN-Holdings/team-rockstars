@@ -17,10 +17,14 @@
  *    button in the UI is never the control.
  */
 
-const PBKDF2_ITERATIONS = 210_000;
+// 100,000 is the maximum Cloudflare Workers' WebCrypto accepts for PBKDF2.
+const PBKDF2_ITERATIONS = 100_000;
 const SESSION_DAYS = 30;
 const RESET_TTL_MIN = 60;
 const RESET_MAX_PER_HOUR = 4;
+const OTP_TTL_MIN = 10;          // login code lifetime
+const OTP_MAX_ATTEMPTS = 5;      // wrong guesses before the code is burned
+const OTP_MAX_PER_HOUR = 5;      // code requests per address per hour
 const NUDGE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 /* ------------------------------------------------------------------ crypto -- */
@@ -62,9 +66,17 @@ function timingSafeEqual(a, b) {
 }
 async function verifyPassword(password, member) {
   if (!member.password_hash || !member.password_salt) return false;
-  const candidate = await pbkdf2(
-    password, unb64(member.password_salt), member.password_iterations || PBKDF2_ITERATIONS
-  );
+  // Always the count stored WITH this account's hash — never a fixed value.
+  const stored = member.password_iterations || PBKDF2_ITERATIONS;
+  let candidate;
+  try {
+    candidate = await pbkdf2(password, unb64(member.password_salt), stored);
+  } catch (e) {
+    // A hash written above the platform ceiling can never be re-derived here.
+    // Fail as a normal password mismatch rather than a 500, so the member can
+    // recover with "Forgot password" and be re-hashed at a supported count.
+    return false;
+  }
   return timingSafeEqual(candidate, member.password_hash);
 }
 
@@ -78,7 +90,7 @@ function corsHeaders(env, request) {
     'Access-Control-Allow-Origin': ok,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Vary': 'Origin'
   };
 }
@@ -97,9 +109,13 @@ const ok = (env, request, data = {}) => json({ ok: true, ...data }, {}, env, req
 const fail = (env, request, status, error) => json({ ok: false, error }, { status }, env, request);
 
 function sessionCookie(token, env, maxAgeSec) {
-  // SameSite=None is required while Pages (*.pages.dev) and the Worker
-  // (*.workers.dev) are different sites. Put both on sculpt-rx.net subdomains
-  // and this can tighten to SameSite=Lax — see README.
+  // The app and API share the registrable domain sculpt-rx.net, so requests
+  // between them are same-site and SameSite=Lax is sent normally — including on
+  // iOS Safari, which blocks cross-site cookies outright.
+  //
+  // No Domain attribute is set unless COOKIE_DOMAIN is provided: a host-only
+  // cookie for the API subdomain is narrower and still travels on every fetch
+  // to that host.
   const parts = [
     `tr_session=${token}`,
     'Path=/',
@@ -127,8 +143,21 @@ const isEmail = v => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v || '');
 
 /* ---------------------------------------------------------------- session --- */
 
+/**
+ * Reads the presented session token. The Authorization header is the primary
+ * transport: Pages and the Worker are different registrable domains, so the
+ * session cookie is third-party and iOS Safari refuses to send it. The cookie
+ * is still accepted so sessions created before this change keep working.
+ */
+function readSessionToken(request) {
+  const auth = request.headers.get('Authorization') || '';
+  const m = /^Bearer\s+(.+)$/i.exec(auth.trim());
+  if (m) return m[1].trim();
+  return readCookie(request, 'tr_session');
+}
+
 async function currentMember(request, env) {
-  const raw = readCookie(request, 'tr_session');
+  const raw = readSessionToken(request);
   if (!raw) return null;
   const row = await env.DB.prepare(
     `SELECT m.* FROM sessions s
@@ -156,6 +185,58 @@ async function requireAdmin(request, env) {
   const me = await requireMember(request, env);
   if (me.role !== 'admin') throw { status: 403, error: 'Administrator access required' };
   return me;
+}
+
+/* -------------------------------------------------------------- login otp --- */
+
+/**
+ * Six digits from rejection-sampled random bytes, so every code is equally
+ * likely. Returned in plaintext only to be emailed; only its hash is stored.
+ */
+function generateOtp() {
+  const max = Math.floor(0xffffffff / 1000000) * 1000000;
+  for (;;) {
+    const v = new DataView(randomBytes(4).buffer).getUint32(0, false);
+    if (v < max) return String(v % 1000000).padStart(6, '0');
+  }
+}
+
+async function sendLoginCodeEmail(env, toEmail, code) {
+  const html = `<!doctype html><html><body style="margin:0;background:#faf9f7;font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1c1d1f">
+  <div style="max-width:480px;margin:0 auto;padding:32px 24px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9a9c9f;margin-bottom:6px">Team Rockstars</div>
+    <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;letter-spacing:-0.02em">Your login code</h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#4a4c4f">Enter this code in Team Rockstars to sign in.</p>
+    <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:34px;font-weight:700;letter-spacing:0.16em;padding:16px 20px;background:#fff;border:1px solid #e6e5e2;border-radius:14px;display:inline-block">${code}</div>
+    <p style="margin:22px 0 0;font-size:13px;line-height:1.5;color:#6b6d70">This code expires in ${OTP_TTL_MIN} minutes and can be used once. If you did not request it, you can ignore this email &mdash; nobody can sign in without the code.</p>
+  </div></body></html>`;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: env.MAIL_FROM,
+      to: toEmail,
+      subject: `Team Rockstars login code: ${code}`,
+      html,
+      text: `Your Team Rockstars login code is ${code}\n\nIt expires in ${OTP_TTL_MIN} minutes and can be used once.`
+    })
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+}
+
+/** Issues a code, invalidating any earlier unused ones for that member. */
+async function issueLoginCode(env, member) {
+  const code = generateOtp();
+  const expires = new Date(Date.now() + OTP_TTL_MIN * 60000).toISOString().slice(0, 19).replace('T', ' ');
+  await env.DB.batch([
+    // A newly requested code supersedes anything outstanding.
+    env.DB.prepare(`DELETE FROM login_codes WHERE member_id = ?1 AND used_at IS NULL`).bind(member.id),
+    env.DB.prepare(
+      `INSERT INTO login_codes (code_hash, member_id, expires_at) VALUES (?1, ?2, ?3)`
+    ).bind(await sha256(code), member.id, expires)
+  ]);
+  await sendLoginCodeEmail(env, member.email, code);
 }
 
 /* ------------------------------------------------------------------ email --- */
@@ -222,16 +303,34 @@ async function bootstrap(me, env) {
     q(`SELECT * FROM opportunities ORDER BY created_at DESC`),
     q(`SELECT * FROM member_opportunity_status`),
     q(`SELECT * FROM saved_comments WHERE member_id = ?1`).bind(me.id),
-    q(`SELECT * FROM announcements ORDER BY pinned DESC, created_at DESC`),
+    q(`SELECT * FROM announcements ORDER BY pinned DESC, created_at DESC LIMIT 200`),
     q(`SELECT * FROM announcement_reads WHERE member_id = ?1`).bind(me.id),
     q(`SELECT * FROM leadership`),
     q(`SELECT * FROM fb_groups ORDER BY featured DESC, sort_order, name`),
     q(`SELECT * FROM group_membership WHERE member_id = ?1`).bind(me.id),
-    q(`SELECT * FROM nudges WHERE recipient_id = ?1 ORDER BY created_at DESC`).bind(me.id),
+    // Admins need the audit trail; members only ever see their own nudges.
+    me.role === 'admin'
+      ? q(`SELECT * FROM nudges ORDER BY created_at DESC LIMIT 200`)
+      : q(`SELECT * FROM nudges WHERE recipient_id = ?1 ORDER BY created_at DESC LIMIT 50`).bind(me.id),
     q(`SELECT * FROM role_transfers ORDER BY created_at DESC LIMIT 10`),
     q(`SELECT * FROM settings`),
     q(`SELECT * FROM monthly_participation WHERE closed_at IS NOT NULL`)
   ]);
+
+  // Queried outside the batch: databases without migrations/004 have no
+  // business_services table, and the app must still load there.
+  let services = { results: [] };
+  try {
+    services = await env.DB.prepare(`SELECT * FROM business_services WHERE active = 1 ORDER BY name`).all();
+  } catch (e) { services = { results: [] }; }
+
+  // Only this member's dismissed Home alerts — nobody needs anyone else's.
+  let dismissals = { results: [] };
+  try {
+    dismissals = await env.DB.prepare(
+      `SELECT kind, ref_id FROM alert_dismissals WHERE member_id = ?1 LIMIT 500`
+    ).bind(me.id).all();
+  } catch (e) { dismissals = { results: [] }; }
 
   const prefsByBiz = {};
   for (const p of prefs.results) {
@@ -270,6 +369,11 @@ async function bootstrap(me, env) {
       businessDisplayName: o.business_display_name, submittedById: o.submitted_by_id,
       facebookUrl: o.facebook_url, facebookGroupName: o.facebook_group_name,
       location: o.location, status: o.status,
+      serviceId: ('service_id' in o) ? o.service_id : null,
+      serviceName: ('service_name' in o) ? (o.service_name || '') : '',
+      // Public request summary ("what are they looking for?"). Empty on
+      // databases that have not yet had migrations/003 applied.
+      notes: ('opportunity_summary' in o) ? (o.opportunity_summary || '') : '',
       // The private review note is only for the owner and admins.
       reviewNote: (o.beneficiary_id === me.id || me.role === 'admin') ? o.review_note : '',
       reviewedById: o.reviewed_by_id, reviewedAt: o.reviewed_at,
@@ -278,19 +382,34 @@ async function bootstrap(me, env) {
     statuses: statuses.results.map(s => ({
       id: s.id, opportunityId: s.opportunity_id, memberId: s.member_id,
       status: s.status, eligibleFrom: s.eligible_from,
+      reason: ('unable_reason' in s) ? (s.unable_reason || '') : '',
       completedAt: s.completed_at, statusChangedAt: s.status_changed_at
     })),
     comments: comments.results.map(c => ({
       id: c.id, memberId: c.member_id, businessMemberId: c.business_member_id,
-      label: c.label, text: c.text, createdAt: c.created_at
+      label: c.label, text: c.text,
+      serviceId: ('service_id' in c) ? c.service_id : null,
+      createdAt: c.created_at
+    })),
+    services: services.results.map(s2 => ({
+      id: s2.id, businessId: s2.business_id, name: s2.name,
+      description: s2.description || '', active: !!s2.active
     })),
     announcements: visibleAnn.map(a => ({
       id: a.id, authorId: a.author_id, submittedById: a.submitted_by_id,
       title: a.title, message: a.message, status: a.status, pinned: !!a.pinned,
       approvedById: a.approved_by_id, approvedAt: a.approved_at,
-      declineReason: a.decline_reason, createdAt: a.created_at
+      declineReason: a.decline_reason, createdAt: a.created_at,
+      // Present only once migrations/005 has run; the client falls back to
+      // "published + 30 days" when they are missing.
+      publishedAt: ('published_at' in a) ? (a.published_at || a.approved_at || a.created_at) : (a.approved_at || a.created_at),
+      expiresAt: ('expires_at' in a) ? (a.expires_at || null) : null
     })),
-    annReads: reads.results.map(r => ({ announcementId: r.announcement_id, memberId: r.member_id, readAt: r.read_at })),
+    alertDismissals: dismissals.results.map(d => ({ memberId: me.id, kind: d.kind, refId: d.ref_id })),
+    annReads: reads.results.map(r => ({
+      announcementId: r.announcement_id, memberId: r.member_id, readAt: r.read_at,
+      dismissedAt: ('dismissed_at' in r) ? (r.dismissed_at || null) : null
+    })),
     leadership: leadershipMap,
     groups: groups.results.map(g => ({
       id: g.id, name: g.name, url: g.url, category: g.category,
@@ -300,7 +419,9 @@ async function bootstrap(me, env) {
     groupStatus: membership.results.map(m2 => ({ groupId: m2.group_id, status: m2.status })),
     nudges: nudges.results.map(n => ({
       id: n.id, senderId: n.sender_id, recipientId: n.recipient_id,
-      message: n.message, readAt: n.read_at, createdAt: n.created_at
+      message: n.message, readAt: n.read_at, createdAt: n.created_at,
+      viewedAt: ('viewed_at' in n) ? (n.viewed_at || null) : null,
+      dismissedAt: ('dismissed_at' in n) ? (n.dismissed_at || null) : null
     })),
     roleTransfers: transfers.results.map(t => ({
       id: t.id, fromMemberId: t.from_member_id, toMemberId: t.to_member_id, createdAt: t.created_at
@@ -334,13 +455,15 @@ const routes = {
 
     const token = await createSession(member.id, request, env);
     await env.DB.prepare(`UPDATE members SET last_login_at = datetime('now') WHERE id = ?1`).bind(member.id).run();
-    return json({ ok: true, me: memberPublic(member) }, {
+    // token is returned in the body because the cookie cannot cross sites.
+    // The cookie is still set for same-site/desktop clients that accept it.
+    return json({ ok: true, token, me: memberPublic(member) }, {
       headers: { 'Set-Cookie': sessionCookie(token, env, SESSION_DAYS * 86400) }
     }, env, request);
   },
 
   'POST /api/auth/logout': async (request, env) => {
-    const raw = readCookie(request, 'tr_session');
+    const raw = readSessionToken(request);
     if (raw) await env.DB.prepare(`DELETE FROM sessions WHERE token = ?1`).bind(await sha256(raw)).run();
     return json({ ok: true }, { headers: { 'Set-Cookie': sessionCookie('', env, 0) } }, env, request);
   },
@@ -348,6 +471,76 @@ const routes = {
   'GET /api/auth/me': async (request, env) => {
     const me = await currentMember(request, env);
     return me ? ok(env, request, { me: memberPublic(me) }) : fail(env, request, 401, 'Not signed in');
+  },
+
+  'POST /api/auth/request-code': async (request, env) => {
+    const { email } = await readJson(request);
+    const addr = clean(email).toLowerCase();
+    if (!isEmail(addr)) throw { status: 400, error: 'Enter a valid email address.' };
+
+    // Rate limit per address, reusing the existing request log table.
+    const recent = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM reset_requests
+        WHERE email = ?1 AND created_at > datetime('now','-1 hour')`
+    ).bind(addr).first();
+    if ((recent?.n || 0) >= OTP_MAX_PER_HOUR) {
+      throw { status: 429, error: 'Too many login codes requested. Try again in an hour.' };
+    }
+    await env.DB.prepare(`INSERT INTO reset_requests (email, ip) VALUES (?1, ?2)`)
+      .bind(addr, request.headers.get('CF-Connecting-IP') || '').run();
+
+    const member = await env.DB.prepare(`SELECT * FROM members WHERE lower(email) = ?1`).bind(addr).first();
+    if (member && member.status === 'active') {
+      await issueLoginCode(env, member);
+    }
+    // Identical response either way, so the endpoint cannot enumerate accounts.
+    return ok(env, request, { sent: true });
+  },
+
+  'POST /api/auth/verify-code': async (request, env) => {
+    const { email, code } = await readJson(request);
+    const addr = clean(email).toLowerCase();
+    const digits = clean(code).replace(/\D/g, '');
+    // One message for every failure, so a wrong code cannot reveal whether the
+    // address exists or whether a code is outstanding.
+    const generic = { status: 401, error: 'That code is not valid or has expired. Request a new one.' };
+    if (!isEmail(addr) || digits.length !== 6) throw generic;
+
+    const member = await env.DB.prepare(`SELECT * FROM members WHERE lower(email) = ?1`).bind(addr).first();
+    if (!member || member.status !== 'active') throw generic;
+
+    const row = await env.DB.prepare(
+      `SELECT * FROM login_codes
+        WHERE member_id = ?1 AND used_at IS NULL
+        ORDER BY created_at DESC LIMIT 1`
+    ).bind(member.id).first();
+    if (!row) throw generic;
+
+    if (new Date(row.expires_at.replace(' ', 'T') + 'Z') < new Date()) {
+      await env.DB.prepare(`DELETE FROM login_codes WHERE code_hash = ?1`).bind(row.code_hash).run();
+      throw generic;
+    }
+    if (row.attempts >= OTP_MAX_ATTEMPTS) {
+      await env.DB.prepare(`DELETE FROM login_codes WHERE code_hash = ?1`).bind(row.code_hash).run();
+      throw { status: 429, error: 'Too many incorrect attempts. Request a new login code.' };
+    }
+
+    const presented = await sha256(digits);
+    if (!timingSafeEqual(presented, row.code_hash)) {
+      await env.DB.prepare(`UPDATE login_codes SET attempts = attempts + 1 WHERE code_hash = ?1`)
+        .bind(row.code_hash).run();
+      throw generic;
+    }
+
+    // Correct: burn the code, then open a normal server-side session.
+    await env.DB.prepare(`UPDATE login_codes SET used_at = datetime('now') WHERE code_hash = ?1`)
+      .bind(row.code_hash).run();
+    const token = await createSession(member.id, request, env);
+    await env.DB.prepare(`UPDATE members SET last_login_at = datetime('now') WHERE id = ?1`)
+      .bind(member.id).run();
+    return json({ ok: true, token, me: memberPublic(member) }, {
+      headers: { 'Set-Cookie': sessionCookie(token, env, SESSION_DAYS * 86400) }
+    }, env, request);
   },
 
   'POST /api/auth/forgot': async (request, env) => {
@@ -411,6 +604,8 @@ const routes = {
     const me = await requireMember(request, env);
     const b = await readJson(request);
     await env.DB.prepare(
+      // business_owner_name is still updatable by an admin flow, but the member
+      // profile form no longer sends it.
       `UPDATE members SET full_name = COALESCE(?1, full_name),
                           business_owner_name = COALESCE(?2, business_owner_name),
                           avatar = ?3
@@ -437,6 +632,7 @@ const routes = {
            clean(b.radius) === 'statewide' ? clean(b.serviceState) : '',
            (existing?.n || 0) === 0 ? 1 : 0).run();
     await writePrefs(env, res.meta.last_row_id, b);
+    await writeServices(env, res.meta.last_row_id, b.services);
     return ok(env, request, { id: res.meta.last_row_id });
   },
 
@@ -453,6 +649,45 @@ const routes = {
            clean(b.radius) === 'statewide' ? clean(b.serviceState) : '',
            owned.id).run();
     await writePrefs(env, owned.id, b);
+    await writeServices(env, owned.id, b.services);
+    return ok(env, request);
+  },
+
+  /** Create or rename a service inside one of my businesses. */
+  'POST /api/services': async (request, env) => {
+    const me = await requireMember(request, env);
+    const b = await readJson(request);
+    const biz = await ownBusiness(env, me, b.businessId);
+    const name = clean(b.name).slice(0, 80);
+    if (!name) throw { status: 400, error: 'Give the service a name.' };
+    try {
+      if (b.id) {
+        await env.DB.prepare(
+          `UPDATE business_services SET name = ?1, description = ?2
+            WHERE id = ?3 AND business_id = ?4`
+        ).bind(name, clean(b.description).slice(0, 200), +b.id, biz.id).run();
+      } else {
+        await env.DB.prepare(
+          `INSERT INTO business_services (business_id, name, description) VALUES (?1,?2,?3)`
+        ).bind(biz.id, name, clean(b.description).slice(0, 200)).run();
+      }
+    } catch (e) {
+      if (/no such table/i.test(String((e && e.message) || e))) {
+        throw { status: 503, error: 'Services need the latest database update. Run npm run db:migrate, then try again.' };
+      }
+      throw e;
+    }
+    return ok(env, request);
+  },
+
+  /** Soft-delete: the service stops being offered but history keeps its name. */
+  'POST /api/services/remove': async (request, env) => {
+    const me = await requireMember(request, env);
+    const { id } = await readJson(request);
+    const row = await env.DB.prepare(`SELECT * FROM business_services WHERE id = ?1`).bind(+id).first();
+    if (!row) throw { status: 404, error: 'Service not found.' };
+    await ownBusiness(env, me, row.business_id);
+    await env.DB.prepare(`UPDATE business_services SET active = 0 WHERE id = ?1`).bind(+id).run();
     return ok(env, request);
   },
 
@@ -505,14 +740,31 @@ const routes = {
     if (dupe && !b.force) throw { status: 409, error: 'This Facebook post has already been submitted.' };
 
     const sendForReview = !!b.sendForReview && beneficiaryId !== me.id;
-    const res = await env.DB.prepare(
-      `INSERT INTO opportunities
-         (beneficiary_id, business_id, business_display_name, submitted_by_id,
-          facebook_url, facebook_group_name, location, status, review_note)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`
-    ).bind(beneficiaryId, +b.businessId || null, clean(b.businessDisplayName) || beneficiary.full_name,
-           me.id, url, clean(b.facebookGroupName), clean(b.location),
-           sendForReview ? 'pending_review' : 'active', clean(b.reviewNote)).run();
+    const cols = [beneficiaryId, +b.businessId || null,
+                  clean(b.businessDisplayName) || beneficiary.full_name,
+                  me.id, url, clean(b.facebookGroupName), clean(b.location),
+                  sendForReview ? 'pending_review' : 'active', clean(b.reviewNote)];
+    let res;
+    try {
+      res = await env.DB.prepare(
+        `INSERT INTO opportunities
+           (beneficiary_id, business_id, business_display_name, submitted_by_id,
+            facebook_url, facebook_group_name, location, status, review_note,
+            opportunity_summary, service_id, service_name)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)`
+      ).bind(...cols, clean(b.notes).slice(0, 300),
+             +b.serviceId || null, clean(b.serviceName).slice(0, 120)).run();
+    } catch (e) {
+      // Databases without migrations 003/004 applied lack these columns — still
+      // accept the submission without them.
+      if (!/opportunity_summary|service_id|service_name|no such column/i.test(String((e && e.message) || e))) throw e;
+      res = await env.DB.prepare(
+        `INSERT INTO opportunities
+           (beneficiary_id, business_id, business_display_name, submitted_by_id,
+            facebook_url, facebook_group_name, location, status, review_note)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`
+      ).bind(...cols).run();
+    }
 
     // Fan out one status row per active member, so "missed" is computable later.
     if (!sendForReview) await fanOut(env, res.meta.last_row_id, beneficiaryId);
@@ -521,21 +773,45 @@ const routes = {
 
   'POST /api/opportunities/status': async (request, env) => {
     const me = await requireMember(request, env);
-    const { opportunityId, status } = await readJson(request);
-    const allowed = ['open', 'completed', 'not_member', 'join_pending', 'banned'];
+    const { opportunityId, status, reason } = await readJson(request);
+    const allowed = ['open', 'completed', 'not_member', 'join_pending', 'banned', 'unable'];
     if (!allowed.includes(status)) throw { status: 400, error: 'Unknown status.' };
     const opp = await env.DB.prepare(`SELECT * FROM opportunities WHERE id = ?1`).bind(+opportunityId).first();
     if (!opp || opp.archived_at || opp.status !== 'active') throw { status: 404, error: 'Opportunity not available.' };
     if (opp.beneficiary_id === me.id) throw { status: 400, error: 'You cannot tag your own opportunity.' };
-    await env.DB.prepare(
-      `INSERT INTO member_opportunity_status
-         (opportunity_id, member_id, status, completed_at, status_changed_at)
-       VALUES (?1, ?2, ?3, ?4, datetime('now'))
-       ON CONFLICT (opportunity_id, member_id) DO UPDATE SET
-         status = excluded.status,
-         completed_at = excluded.completed_at,
-         status_changed_at = datetime('now')`
-    ).bind(opp.id, me.id, status, status === 'completed' ? new Date().toISOString() : null).run();
+    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+    const unableReason = status === 'unable' ? clean(reason).slice(0, 300) || null : null;
+    try {
+      await env.DB.prepare(
+        `INSERT INTO member_opportunity_status
+           (opportunity_id, member_id, status, unable_reason, completed_at, status_changed_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
+         ON CONFLICT (opportunity_id, member_id) DO UPDATE SET
+           status = excluded.status,
+           unable_reason = excluded.unable_reason,
+           completed_at = excluded.completed_at,
+           status_changed_at = datetime('now')`
+      ).bind(opp.id, me.id, status, unableReason, completedAt).run();
+    } catch (e) {
+      // Databases that have not yet had migrations/002_unable_reason.sql applied
+      // have no unable_reason column and an older status CHECK constraint.
+      // Everything except the new 'unable' status still works there, so fall
+      // back rather than breaking completing a tag.
+      const msg = String((e && e.message) || e);
+      if (!/unable_reason|no such column/i.test(msg)) throw e;
+      if (status === 'unable') {
+        throw { status: 503, error: 'Saving a reason needs the latest database update. Run npm run db:migrate, then try again.' };
+      }
+      await env.DB.prepare(
+        `INSERT INTO member_opportunity_status
+           (opportunity_id, member_id, status, completed_at, status_changed_at)
+         VALUES (?1, ?2, ?3, ?4, datetime('now'))
+         ON CONFLICT (opportunity_id, member_id) DO UPDATE SET
+           status = excluded.status,
+           completed_at = excluded.completed_at,
+           status_changed_at = datetime('now')`
+      ).bind(opp.id, me.id, status, completedAt).run();
+    }
     return ok(env, request);
   },
 
@@ -547,7 +823,15 @@ const routes = {
     if (!opp) throw { status: 404, error: 'Not found.' };
     // Only the business owner (or an admin) may decide.
     if (opp.beneficiary_id !== me.id && me.role !== 'admin') throw { status: 403, error: 'Not your opportunity.' };
-    if (opp.status !== 'pending_review') throw { status: 400, error: 'This is not awaiting review.' };
+    // Approving only makes sense for a post still awaiting review. Declining is
+    // also how a business owner pulls an already-published post out of tagging,
+    // so 'active' is accepted there too.
+    if (decision === 'approve' && opp.status !== 'pending_review') {
+      throw { status: 400, error: 'This is not awaiting review.' };
+    }
+    if (decision !== 'approve' && !['pending_review', 'active'].includes(opp.status)) {
+      throw { status: 400, error: 'This opportunity has already been reviewed.' };
+    }
 
     if (decision === 'approve') {
       await env.DB.prepare(
@@ -557,7 +841,8 @@ const routes = {
     } else {
       await env.DB.prepare(
         `UPDATE opportunities SET status = 'declined', reviewed_by_id = ?1,
-                                  reviewed_at = datetime('now'), decline_reason = ?2
+                                  reviewed_at = datetime('now'), decline_reason = ?2,
+                                  archived_at = COALESCE(archived_at, datetime('now'))
           WHERE id = ?3`
       ).bind(me.id, clean(reason), opp.id).run();
     }
@@ -571,14 +856,32 @@ const routes = {
     const b = await readJson(request);
     if (!clean(b.text)) throw { status: 400, error: 'Write the comment you want to save.' };
     if (b.id) {
-      await env.DB.prepare(
-        `UPDATE saved_comments SET business_member_id = ?1, label = ?2, text = ?3, updated_at = datetime('now')
-          WHERE id = ?4 AND member_id = ?5`
-      ).bind(+b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500), +b.id, me.id).run();
+      try {
+        await env.DB.prepare(
+          `UPDATE saved_comments SET business_member_id = ?1, label = ?2, text = ?3,
+                                     service_id = ?4, updated_at = datetime('now')
+            WHERE id = ?5 AND member_id = ?6`
+        ).bind(+b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500),
+               +b.serviceId || null, +b.id, me.id).run();
+      } catch (e) {
+        if (!/service_id|no such column/i.test(String((e && e.message) || e))) throw e;
+        await env.DB.prepare(
+          `UPDATE saved_comments SET business_member_id = ?1, label = ?2, text = ?3, updated_at = datetime('now')
+            WHERE id = ?4 AND member_id = ?5`
+        ).bind(+b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500), +b.id, me.id).run();
+      }
     } else {
-      await env.DB.prepare(
-        `INSERT INTO saved_comments (member_id, business_member_id, label, text) VALUES (?1,?2,?3,?4)`
-      ).bind(me.id, +b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500)).run();
+      try {
+        await env.DB.prepare(
+          `INSERT INTO saved_comments (member_id, business_member_id, label, text, service_id)
+           VALUES (?1,?2,?3,?4,?5)`
+        ).bind(me.id, +b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500), +b.serviceId || null).run();
+      } catch (e) {
+        if (!/service_id|no such column/i.test(String((e && e.message) || e))) throw e;
+        await env.DB.prepare(
+          `INSERT INTO saved_comments (member_id, business_member_id, label, text) VALUES (?1,?2,?3,?4)`
+        ).bind(me.id, +b.businessMemberId, clean(b.label), clean(b.text).slice(0, 500)).run();
+      }
     }
     return ok(env, request);
   },
@@ -633,6 +936,81 @@ const routes = {
     return ok(env, request);
   },
 
+  /** Dismiss = hide from MY Home screen. Everyone else still sees it. */
+  'POST /api/announcements/dismiss': async (request, env) => {
+    const me = await requireMember(request, env);
+    const { id, dismissed } = await readJson(request);
+    const on = dismissed !== false;
+    try {
+      await env.DB.prepare(
+        `INSERT INTO announcement_reads (announcement_id, member_id, dismissed_at)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT (announcement_id, member_id) DO UPDATE SET dismissed_at = excluded.dismissed_at`
+      ).bind(+id, me.id, on ? new Date().toISOString() : null).run();
+    } catch (e) {
+      if (/dismissed_at|no such column/i.test(String((e && e.message) || e))) {
+        throw { status: 503, error: 'Dismissing needs the latest database update. Run npm run db:migrate, then try again.' };
+      }
+      throw e;
+    }
+    return ok(env, request);
+  },
+
+  /**
+   * Dismiss a transient Home alert (currently opportunity review outcomes).
+   * Per member; the opportunity and its review record are untouched.
+   */
+  'POST /api/alerts/dismiss': async (request, env) => {
+    const me = await requireMember(request, env);
+    const { kind, refId } = await readJson(request);
+    const k = clean(kind).slice(0, 40);
+    if (!k || !+refId) throw { status: 400, error: 'Nothing to dismiss.' };
+    try {
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO alert_dismissals (member_id, kind, ref_id) VALUES (?1, ?2, ?3)`
+      ).bind(me.id, k, +refId).run();
+    } catch (e) {
+      if (!/no such table/i.test(String((e && e.message) || e))) throw e;
+      throw { status: 503, error: 'Dismissing needs the latest database update. Run npm run db:migrate.' };
+    }
+    return ok(env, request);
+  },
+
+  /* ---- nudges: viewed and dismissed are separate states ---- */
+
+  'POST /api/nudges/view': async (request, env) => {
+    const me = await requireMember(request, env);
+    const { ids } = await readJson(request);
+    const list = Array.isArray(ids) ? ids.map(Number).filter(Boolean).slice(0, 50) : [];
+    if (!list.length) return ok(env, request);
+    try {
+      await env.DB.batch(list.map(id => env.DB.prepare(
+        `UPDATE nudges SET viewed_at = COALESCE(viewed_at, datetime('now'))
+          WHERE id = ?1 AND recipient_id = ?2`
+      ).bind(id, me.id)));
+    } catch (e) {
+      if (!/viewed_at|no such column/i.test(String((e && e.message) || e))) throw e;
+      throw { status: 503, error: 'Nudge tracking needs the latest database update. Run npm run db:migrate.' };
+    }
+    return ok(env, request);
+  },
+
+  'POST /api/nudges/dismiss': async (request, env) => {
+    const me = await requireMember(request, env);
+    const { id } = await readJson(request);
+    try {
+      await env.DB.prepare(
+        `UPDATE nudges SET viewed_at = COALESCE(viewed_at, datetime('now')),
+                           dismissed_at = datetime('now')
+          WHERE id = ?1 AND recipient_id = ?2`
+      ).bind(+id, me.id).run();
+    } catch (e) {
+      if (!/dismissed_at|viewed_at|no such column/i.test(String((e && e.message) || e))) throw e;
+      throw { status: 503, error: 'Nudge tracking needs the latest database update. Run npm run db:migrate.' };
+    }
+    return ok(env, request);
+  },
+
   /* ================================ admin ================================= */
 
   'POST /api/admin/members': async (request, env) => {
@@ -640,7 +1018,10 @@ const routes = {
     const b = await readJson(request);
     const addr = clean(b.email).toLowerCase();
     if (!isEmail(addr)) throw { status: 400, error: 'Enter a valid email address.' };
-    if (!clean(b.fullName)) throw { status: 400, error: 'Enter the member’s full name.' };
+    // The Add Member form collects one person name (business owner name); older
+    // clients may still send fullName. Either satisfies the requirement.
+    const personName = clean(b.fullName) || clean(b.businessOwnerName);
+    if (!personName) throw { status: 400, error: 'Enter the business owner’s name.' };
     const dupe = await env.DB.prepare(`SELECT id FROM members WHERE lower(email) = ?1`).bind(addr).first();
     if (dupe) throw { status: 409, error: 'Another member already uses that email address.' };
 
@@ -648,20 +1029,69 @@ const routes = {
     const res = await env.DB.prepare(
       `INSERT INTO members (email, full_name, business_owner_name, role, status)
        VALUES (?1,?2,?3,'member','active')`
-    ).bind(addr, clean(b.fullName), clean(b.businessOwnerName) || clean(b.fullName)).run();
+    ).bind(addr, personName, clean(b.businessOwnerName) || personName).run();
 
     if (clean(b.businessName)) {
       await env.DB.prepare(
         `INSERT INTO businesses (member_id, name, is_primary) VALUES (?1, ?2, 1)`
       ).bind(res.meta.last_row_id, clean(b.businessName)).run();
     }
+    // No password is created. The member signs in with an email login code.
     let emailed = true, emailError = '';
     try {
-      await issueReset(env, { id: res.meta.last_row_id, email: addr }, true);
+      await issueLoginCode(env, { id: res.meta.last_row_id, email: addr });
     } catch (e) {
       emailed = false; emailError = String(e.message || e);
     }
     return ok(env, request, { id: res.meta.last_row_id, invited: emailed, emailError });
+  },
+
+  /**
+   * Edit an existing member. Names live only on members / businesses, so every
+   * screen picks the change up from the next bootstrap — no cached copies.
+   */
+  'POST /api/admin/members/update': async (request, env) => {
+    await requireAdmin(request, env);
+    const b = await readJson(request);
+    const id = +b.id;
+    const row = await env.DB.prepare(`SELECT * FROM members WHERE id = ?1`).bind(id).first();
+    if (!row) throw { status: 404, error: 'That member no longer exists.' };
+
+    const name = clean(b.businessOwnerName) || clean(b.fullName);
+    if (!name) throw { status: 400, error: 'Enter the business owner’s name.' };
+    const addr = clean(b.email).toLowerCase();
+    if (addr) {
+      if (!isEmail(addr)) throw { status: 400, error: 'Enter a valid email address.' };
+      const dupe = await env.DB.prepare(
+        `SELECT id FROM members WHERE lower(email) = ?1 AND id <> ?2`
+      ).bind(addr, id).first();
+      if (dupe) throw { status: 409, error: 'Another member already uses that email address.' };
+    }
+    // members.tag_group only permits these two values.
+    const group = ['active', 'paused'].indexOf(clean(b.tagGroup)) > -1 ? clean(b.tagGroup) : null;
+
+    await env.DB.prepare(
+      `UPDATE members SET full_name = ?1, business_owner_name = ?1,
+                          email = COALESCE(?2, email),
+                          tag_group = COALESCE(?3, tag_group)
+        WHERE id = ?4`
+    ).bind(name.slice(0, 120), addr || null, group, id).run();
+
+    const bizName = clean(b.businessName);
+    if (bizName) {
+      const primary = await env.DB.prepare(
+        `SELECT id FROM businesses WHERE member_id = ?1 AND active = 1
+          ORDER BY is_primary DESC, id ASC LIMIT 1`
+      ).bind(id).first();
+      if (primary) {
+        await env.DB.prepare(`UPDATE businesses SET name = ?1 WHERE id = ?2`)
+          .bind(bizName.slice(0, 120), primary.id).run();
+      } else {
+        await env.DB.prepare(`INSERT INTO businesses (member_id, name, is_primary) VALUES (?1, ?2, 1)`)
+          .bind(id, bizName.slice(0, 120)).run();
+      }
+    }
+    return ok(env, request);
   },
 
   'POST /api/admin/members/status': async (request, env) => {
@@ -721,18 +1151,41 @@ const routes = {
   'POST /api/admin/announcements': async (request, env) => {
     const admin = await requireAdmin(request, env);
     const b = await readJson(request);
+    // Blank expiry means the 30-day default, applied here so the rule lives on
+    // the server rather than in whichever client happens to be talking to it.
+    const expiresAt = expiryOrDefault(b.expiresAt);
     if (b.id) {
-      await env.DB.prepare(
-        `UPDATE announcements SET title = ?1, message = ?2, pinned = ?3, updated_at = datetime('now') WHERE id = ?4`
-      ).bind(clean(b.title), clean(b.message), b.pinned ? 1 : 0, +b.id).run();
+      try {
+        await env.DB.prepare(
+          `UPDATE announcements SET title = ?1, message = ?2, pinned = ?3,
+                                    expires_at = ?4, updated_at = datetime('now')
+            WHERE id = ?5`
+        ).bind(clean(b.title), clean(b.message), b.pinned ? 1 : 0, expiresAt, +b.id).run();
+      } catch (e) {
+        if (!/expires_at|no such column/i.test(String((e && e.message) || e))) throw e;
+        await env.DB.prepare(
+          `UPDATE announcements SET title = ?1, message = ?2, pinned = ?3, updated_at = datetime('now') WHERE id = ?4`
+        ).bind(clean(b.title), clean(b.message), b.pinned ? 1 : 0, +b.id).run();
+      }
       return ok(env, request);
     }
     if (!clean(b.title) || !clean(b.message)) throw { status: 400, error: 'Add a title and a message.' };
-    const res = await env.DB.prepare(
-      `INSERT INTO announcements (author_id, submitted_by_id, title, message, status, pinned,
-                                  approved_by_id, approved_at)
-       VALUES (?1, ?1, ?2, ?3, 'published', ?4, ?1, datetime('now'))`
-    ).bind(admin.id, clean(b.title).slice(0, 120), clean(b.message).slice(0, 2000), b.pinned ? 1 : 0).run();
+    let res;
+    try {
+      res = await env.DB.prepare(
+        `INSERT INTO announcements (author_id, submitted_by_id, title, message, status, pinned,
+                                    approved_by_id, approved_at, published_at, expires_at)
+         VALUES (?1, ?1, ?2, ?3, 'published', ?4, ?1, datetime('now'), datetime('now'), ?5)`
+      ).bind(admin.id, clean(b.title).slice(0, 120), clean(b.message).slice(0, 2000),
+             b.pinned ? 1 : 0, expiresAt).run();
+    } catch (e) {
+      if (!/published_at|expires_at|no such column/i.test(String((e && e.message) || e))) throw e;
+      res = await env.DB.prepare(
+        `INSERT INTO announcements (author_id, submitted_by_id, title, message, status, pinned,
+                                    approved_by_id, approved_at)
+         VALUES (?1, ?1, ?2, ?3, 'published', ?4, ?1, datetime('now'))`
+      ).bind(admin.id, clean(b.title).slice(0, 120), clean(b.message).slice(0, 2000), b.pinned ? 1 : 0).run();
+    }
     return ok(env, request, { id: res.meta.last_row_id });
   },
 
@@ -743,10 +1196,20 @@ const routes = {
     if (!row) throw { status: 404, error: 'Not found.' };
     if (row.status !== 'pending') throw { status: 400, error: 'This submission was already handled.' };
     if (decision === 'approve') {
-      await env.DB.prepare(
-        `UPDATE announcements SET status = 'published', approved_by_id = ?1, approved_at = datetime('now')
-          WHERE id = ?2`
-      ).bind(admin.id, row.id).run();
+      try {
+        await env.DB.prepare(
+          `UPDATE announcements SET status = 'published', approved_by_id = ?1,
+                                    approved_at = datetime('now'), published_at = datetime('now'),
+                                    expires_at = COALESCE(expires_at, ?2)
+            WHERE id = ?3`
+        ).bind(admin.id, expiryOrDefault(''), row.id).run();
+      } catch (e) {
+        if (!/published_at|expires_at|no such column/i.test(String((e && e.message) || e))) throw e;
+        await env.DB.prepare(
+          `UPDATE announcements SET status = 'published', approved_by_id = ?1, approved_at = datetime('now')
+            WHERE id = ?2`
+        ).bind(admin.id, row.id).run();
+      }
     } else {
       await env.DB.prepare(
         `UPDATE announcements SET status = 'declined', approved_by_id = ?1,
@@ -841,6 +1304,58 @@ async function ownBusiness(env, me, id) {
   return row;
 }
 
+/** ISO expiry: the admin's date when given, otherwise 30 days from now. */
+function expiryOrDefault(value) {
+  const raw = clean(value);
+  if (raw) {
+    const t = Date.parse(raw);
+    if (t) return new Date(t).toISOString();
+  }
+  return new Date(Date.now() + 30 * 864e5).toISOString();
+}
+
+/**
+ * Reconcile the service list submitted alongside a business. Undefined means
+ * "not managed in this request", so older clients cannot wipe services.
+ * Removed services are deactivated, never deleted, so history keeps its names.
+ */
+async function writeServices(env, businessId, services) {
+  if (!Array.isArray(services)) return;
+  try {
+    const existing = await env.DB.prepare(
+      `SELECT * FROM business_services WHERE business_id = ?1`
+    ).bind(businessId).all();
+    const rows = existing.results || [];
+    const keep = new Set();
+    const stmts = [];
+    for (const sv of services.slice(0, 30)) {
+      const name = clean(sv && sv.name).slice(0, 80);
+      if (!name) continue;
+      const byId = sv && sv.id ? rows.find(r => r.id === +sv.id) : null;
+      const match = byId || rows.find(r => r.name.toLowerCase() === name.toLowerCase());
+      if (match) {
+        keep.add(match.id);
+        stmts.push(env.DB.prepare(
+          `UPDATE business_services SET name = ?1, active = 1 WHERE id = ?2`
+        ).bind(name, match.id));
+      } else {
+        stmts.push(env.DB.prepare(
+          `INSERT INTO business_services (business_id, name) VALUES (?1, ?2)`
+        ).bind(businessId, name));
+      }
+    }
+    for (const r of rows) {
+      if (r.active && !keep.has(r.id)) {
+        stmts.push(env.DB.prepare(`UPDATE business_services SET active = 0 WHERE id = ?1`).bind(r.id));
+      }
+    }
+    if (stmts.length) await env.DB.batch(stmts);
+  } catch (e) {
+    if (/no such table|no such column/i.test(String((e && e.message) || e))) return;
+    throw e;
+  }
+}
+
 async function writePrefs(env, businessId, body) {
   const kinds = [['wants', 'want'], ['notWants', 'not_want'],
                  ['preferred', 'preferred_area'], ['avoid', 'avoid_area']];
@@ -872,6 +1387,7 @@ async function fanOut(env, opportunityId, beneficiaryId) {
 async function sweep(env) {
   await env.DB.batch([
     env.DB.prepare(`DELETE FROM sessions WHERE expires_at < datetime('now')`),
+    env.DB.prepare(`DELETE FROM login_codes WHERE expires_at < datetime('now','-1 hour')`),
     env.DB.prepare(`DELETE FROM reset_tokens WHERE expires_at < datetime('now','-1 day')`),
     env.DB.prepare(`DELETE FROM reset_requests WHERE created_at < datetime('now','-1 day')`)
   ]);

@@ -16,8 +16,9 @@ database_id = "ea0911ce-582c-4a9b-abc0-b6a0b2f9ab4b"
 # build password-reset links, so put the canonical app URL first.
 APP_ORIGIN = "https://team-rockstars.pages.dev"
 MAIL_FROM = "Team Rockstars <noreply@sculpt-rx.net>"
-# "None" while Pages and the Worker are on different domains.
-# Change to "Lax" once both are on sculpt-rx.net subdomains (see README step 9).
+# The session is carried by the Authorization header, not this cookie, because
+# pages.dev and workers.dev are different sites. "None" keeps the cookie usable
+# as a fallback for browsers that still accept it.
 COOKIE_SAMESITE = "None"
 
 # Housekeeping: expires sessions and spent reset tokens nightly.
