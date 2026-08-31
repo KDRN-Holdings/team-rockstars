@@ -186,7 +186,14 @@
 
         <sc-for list="{{ homeAlerts }}" as="al2" hint-placeholder-count="1">
           <div style="background:oklch(0.97 0.03 85);border:1px solid oklch(0.87 0.07 85);border-radius:12px;padding:11px 13px;font-size:13px;color:oklch(0.4 0.1 70);display:flex;flex-direction:column;gap:7px">
-            <span>{{ al2.text }}</span>
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <span style="flex:1;min-width:0">{{ al2.text }}</span>
+              <sc-if value="{{ al2.canDismiss }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ al2.onDismiss }}" aria-label="{{ al2.dismissAria }}" style="flex:none;width:44px;height:44px;margin:-11px -9px -11px 0;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:none;color:oklch(0.5 0.09 70);cursor:pointer" style-hover="background:oklch(0.94 0.05 85)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+              </sc-if>
+            </div>
             <sc-if value="{{ al2.hasMeta }}" hint-placeholder-val="{{ false }}">
               <span style="font-size:12px;color:oklch(0.46 0.08 70)">{{ al2.meta }}</span>
             </sc-if>
@@ -271,13 +278,19 @@
           </select>
         </div>
 
+        <div role="tablist" aria-label="Leaderboard measure" style="display:flex;gap:4px;background:#f0efec;border-radius:11px;padding:3px">
+          <sc-for list="{{ boardTabs }}" as="bt" hint-placeholder-count="2">
+            <button type="button" role="tab" aria-selected="{{ bt.active }}" onClick="{{ bt.onClick }}" style="flex:1;min-width:0;min-height:44px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ bt.bg }};color:{{ bt.fg }};box-shadow:{{ bt.shadow }}">{{ bt.label }}</button>
+          </sc-for>
+        </div>
+
         <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
-          <div style="display:grid;grid-template-columns:26px 34px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #eceae6;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#9a9c9f">
-            <span>#</span><span></span><span>Member</span><span>Tags</span>
+          <div style="display:grid;grid-template-columns:30px 34px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #eceae6;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#9a9c9f">
+            <span>#</span><span></span><span>Member</span><span>{{ boardMetricLabel }}</span>
           </div>
           <sc-for list="{{ boardRows }}" as="r" hint-placeholder-count="8">
-            <div style="display:grid;grid-template-columns:26px 34px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ r.bg }}">
-              <span style="font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:{{ r.rankWeight }};color:{{ r.rankColor }};text-align:center">{{ r.rank }}</span>
+            <div style="display:grid;grid-template-columns:30px 34px 1fr auto;gap:9px;align-items:center;padding:10px 13px;border-bottom:1px solid #f2f1ee;background:{{ r.bg }};box-shadow:{{ r.shadow }}">
+              <span aria-hidden="true" style="width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;font-size:{{ r.rankSize }};font-weight:{{ r.rankWeight }};letter-spacing:-0.02em;background:{{ r.rankBg }};color:{{ r.rankColor }};border:1px solid {{ r.rankBorder }}">{{ r.rank }}</span>
               <sc-if value="{{ r.hasPhoto }}" hint-placeholder-val="{{ false }}">
                 {{ r.photoImg }}
               </sc-if>
@@ -285,12 +298,20 @@
                 <span aria-hidden="true" style="width:34px;height:34px;border-radius:18px;background:{{ r.avBg }};color:{{ r.avFg }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;letter-spacing:0.01em">{{ r.initials }}</span>
               </sc-if>
               <span style="min-width:0">
-                <span style="display:block;font-size:14px;font-weight:{{ r.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                <span style="display:flex;align-items:center;gap:6px;min-width:0">
+                  <span style="min-width:0;font-size:14px;font-weight:{{ r.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                  <sc-if value="{{ r.isMe }}" hint-placeholder-val="{{ false }}">
+                    <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:oklch(0.52 0.16 262);color:#fff">You</span>
+                  </sc-if>
+                  <sc-if value="{{ r.hasMedal }}" hint-placeholder-val="{{ false }}">
+                    <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:{{ r.medalBg }};color:{{ r.medalFg }}">{{ r.medal }}</span>
+                  </sc-if>
+                </span>
                 <span style="display:block;font-size:12px;color:#8a8c8f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.business }}</span>
               </span>
-              <span style="display:flex;flex-direction:column;align-items:flex-end;min-width:38px">
-                <span style="font-family:'Instrument Sans',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.02em;line-height:1.1">{{ r.completed }}</span>
-                <span style="font-size:11px;color:#9a9c9f">{{ r.rate }}</span>
+              <span style="display:flex;flex-direction:column;align-items:flex-end;min-width:40px">
+                <span style="font-family:'Instrument Sans',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.02em;line-height:1.1">{{ r.value }}</span>
+                <span style="font-size:11px;color:#9a9c9f;white-space:nowrap">{{ r.sub }}</span>
               </span>
             </div>
           </sc-for>
@@ -1628,8 +1649,9 @@
               <button type="button" onClick="{{ onAddMember }}" style="flex:none;min-height:48px;padding:0 14px;border:none;border-radius:12px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Add</button>
             </div>
             <sc-if value="{{ mfOpen }}" hint-placeholder-val="{{ false }}">
-              <div style="background:#fff;border:1px solid oklch(0.86 0.055 262);border-radius:14px;padding:15px;display:flex;flex-direction:column;gap:13px">
-                <h2 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:14px;font-weight:700">{{ mfTitle }}</h2>
+              <div role="dialog" aria-modal="true" aria-label="{{ mfTitle }}" onClick="{{ onCancelMember }}" style="position:fixed;inset:0;z-index:80;background:rgba(20,20,22,0.4);display:flex;align-items:flex-end;justify-content:center;overflow-y:auto">
+              <div onClick="{{ stop }}" style="width:100%;max-width:440px;margin-top:auto;background:#fff;border:1px solid oklch(0.86 0.055 262);border-radius:20px 20px 0 0;padding:17px 16px calc(17px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:13px;animation:trSheet 0.16s ease-out">
+                <h2 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.02em">{{ mfTitle }}</h2>
                 <div>
                   <label for="tr-me" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Email address</label>
                   <input id="tr-me" type="email" value="{{ mfEmail }}" onChange="{{ onMfEmail }}" placeholder="member@business.com" style="width:100%;min-height:50px;padding:0 13px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f" />
@@ -1657,7 +1679,6 @@
                   <label for="tr-mg" style="display:block;font-size:13px;font-weight:600;color:#4a4c4f;margin-bottom:6px">Tagging group</label>
                   <select id="tr-mg" value="{{ mfTagGroup }}" onChange="{{ onMfTagGroup }}" style="width:100%;min-height:50px;padding:0 11px;border:1px solid #d9d8d4;border-radius:11px;font-size:14px;background:#fff;color:#1c1d1f">
                     <option value="active">In the active tagging group</option>
-                    <option value="pending">Not in the group yet</option>
                     <option value="paused">Paused this month</option>
                   </select>
                   <p style="margin:6px 0 0;font-size:12px;color:#9a9c9f">Members outside the group see no monthly requirement.</p>
@@ -1669,6 +1690,7 @@
                   <button type="button" onClick="{{ onCancelMember }}" style="flex:1;min-height:48px;border:1px solid #d9d8d4;border-radius:11px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;color:#1c1d1f">Cancel</button>
                   <button type="button" onClick="{{ onSaveMember }}" style="flex:1;min-height:48px;border:none;border-radius:11px;background:oklch(0.52 0.16 262);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Save</button>
                 </div>
+              </div>
               </div>
             </sc-if>
             <sc-for list="{{ adminMembers }}" as="m" hint-placeholder-count="5">
@@ -1839,6 +1861,35 @@
                 <option value="{{ m.value }}">{{ m.label }}</option>
               </sc-for>
             </select>
+            <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
+              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most tags completed</div>
+              <sc-for list="{{ adminTagRank }}" as="tr1" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ tr1.bg }}">
+                  <span aria-hidden="true" style="width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;font-size:{{ tr1.rankSize }};font-weight:{{ tr1.rankWeight }};background:{{ tr1.rankBg }};color:{{ tr1.rankColor }};border:1px solid {{ tr1.rankBorder }}">{{ tr1.rank }}</span>
+                  <span style="min-width:0">
+                    <span style="display:block;font-size:14px;font-weight:{{ tr1.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tr1.name }}</span>
+                    <span style="display:block;font-size:11.5px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tr1.sub }}</span>
+                  </span>
+                  <span style="font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.02em">{{ tr1.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
+              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most posts found</div>
+              <sc-for list="{{ adminFoundRank }}" as="fr1" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ fr1.bg }}">
+                  <span aria-hidden="true" style="width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;font-size:{{ fr1.rankSize }};font-weight:{{ fr1.rankWeight }};background:{{ fr1.rankBg }};color:{{ fr1.rankColor }};border:1px solid {{ fr1.rankBorder }}">{{ fr1.rank }}</span>
+                  <span style="min-width:0">
+                    <span style="display:block;font-size:14px;font-weight:{{ fr1.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fr1.name }}</span>
+                    <span style="display:block;font-size:11.5px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fr1.sub }}</span>
+                  </span>
+                  <span style="font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.02em">{{ fr1.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f;margin-top:4px">Behind pace &mdash; nudge</div>
             <sc-for list="{{ rankNudgeRows }}" as="rn" hint-placeholder-count="8">
               <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:9px">
                 <span style="flex:none;width:20px;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:700;color:#9a9c9f;text-align:right">{{ rn.rank }}</span>
@@ -2149,7 +2200,7 @@ class Component extends DCLogic {
       form: { beneficiaryId: '', business: '', url: '', review: 'now', reviewNote: '', serviceKey: '' },
       formError: '', formDupe: '', svcForm: null, svcError: '',
       cf: { id: null, businessId: '', serviceId: '', label: '', text: '' }, cfError: '',
-      cSearch: '', range: 'this', rankMonth: '', adminTab: 'overview', adminSearch: '',
+      cSearch: '', range: 'this', rankMonth: '', boardMetric: 'completed', adminTab: 'overview', adminSearch: '',
       nudgeFor: null, nudgeText: '',
       mf: null, mfError: '', profile: null, annForm: null, annError: '', expandedAnn: null,
       annDeclineFor: null, annDeclineText: '',
@@ -2220,7 +2271,7 @@ class Component extends DCLogic {
         businessOwnerName: '', avatar: null, role: 'admin', status: 'active',
         tagGroup: 'active', joinedAt: now, hasPassword: true
       }],
-      businesses: [], services: [], opportunities: [], statuses: [], comments: [],
+      businesses: [], services: [], opportunities: [], statuses: [], comments: [], alertDismissals: [],
       announcements: [], annReads: [], groups: [], groupStatus: [],
       nudges: [], roleTransfers: [], closedMonths: [],
       leadership: { president: null, vicePresident: null, chapterTech: null, ambassador: null },
@@ -2475,6 +2526,39 @@ class Component extends DCLogic {
         break;
       }
 
+      case '/api/admin/members/update': {
+        const id = +b.id;
+        const target = s.members.find(m => m.id === id);
+        if (!target) throw new Error('That member no longer exists.');
+        const name = (b.businessOwnerName || '').trim();
+        if (name) { target.fullName = name; target.businessOwnerName = name; }
+        if (b.email) target.email = String(b.email).trim().toLowerCase();
+        if (b.tagGroup) target.tagGroup = b.tagGroup;
+        // The business name lives on the member's primary business row.
+        const bizName = (b.businessName || '').trim();
+        if (bizName) {
+          const primary = s.businesses.find(x => x.memberId === id && x.active !== false && x.primary)
+            || s.businesses.find(x => x.memberId === id && x.active !== false);
+          if (primary) primary.name = bizName;
+          else s.businesses.push({
+            id: nid(), memberId: id, name: bizName, industry: '', website: '', city: '',
+            radius: 'none', serviceState: '', wants: [], notWants: [], preferred: [], avoid: [],
+            primary: true, active: true, createdAt: now
+          });
+        }
+        break;
+      }
+
+      case '/api/alerts/dismiss': {
+        s.alertDismissals = s.alertDismissals || [];
+        const kind = String(b.kind || '');
+        const refId = +b.refId;
+        if (!s.alertDismissals.some(d => d.memberId === meId && d.kind === kind && d.refId === refId)) {
+          s.alertDismissals.push({ memberId: meId, kind, refId, dismissedAt: now });
+        }
+        break;
+      }
+
       case '/api/admin/members/status':
         s.members = s.members.map(m => m.id === +b.id ? { ...m, status: b.status } : m);
         break;
@@ -2594,6 +2678,7 @@ class Component extends DCLogic {
     const me = s.members.find(m => m.id === s.meId) || s.members[0];
     return {
       me, members: s.members, businesses: s.businesses, services: s.services || [],
+      alertDismissals: s.alertDismissals || [],
       opportunities: s.opportunities, statuses: s.statuses, comments: s.comments,
       announcements: s.announcements, annReads: s.annReads,
       leadership: s.leadership, groups: s.groups, groupStatus: s.groupStatus,
@@ -2887,6 +2972,56 @@ class Component extends DCLogic {
   }
   stats(memberId, key) { return this.statsPeriod(memberId, this.monthStart(key), this.monthEnd(key)); }
 
+  /**
+   * Ranked members for one month.
+   *   metric 'completed' — tags completed; ties break on completion rate, then posts found.
+   *   metric 'submitted' — posts found; ties break on tags completed.
+   * Equal counts share a rank number (1, 2, 2, 4) so nobody is ordered arbitrarily.
+   */
+  rankingBy(key, metric) {
+    const m2 = metric === 'submitted' ? 'submitted' : 'completed';
+    const rows = this.db.members
+      .filter(m => m.status === 'active' && Date.parse(m.joinedAt) < this.monthEnd(key))
+      .map(m => ({ id: m.id, name: m.fullName, business: m.businessName, s: this.stats(m.id, key) }));
+    rows.sort((a, b) => m2 === 'completed'
+      ? (b.s.completed - a.s.completed || (b.s.rate || 0) - (a.s.rate || 0)
+         || b.s.submitted - a.s.submitted || a.name.localeCompare(b.name))
+      : (b.s.submitted - a.s.submitted || b.s.completed - a.s.completed
+         || a.name.localeCompare(b.name)));
+    let rank = 0, prev = null;
+    rows.forEach((r, i) => {
+      const v = r.s[m2];
+      if (v !== prev) { rank = i + 1; prev = v; }
+      r.rank = rank;
+      r.tied = false;
+    });
+    rows.forEach((r, i) => {
+      r.tied = rows.some((o, j) => j !== i && o.rank === r.rank);
+    });
+    return rows;
+  }
+
+  /** Shared visual grammar for a ranked row: emphasis for the top three. */
+  rankStyle(rank, isMe) {
+    const top = rank <= 3;
+    const medals = { 1: ['1st', 'oklch(0.9 0.09 85)', 'oklch(0.36 0.09 70)'],
+                     2: ['2nd', '#e8e7e3', '#4a4c4f'],
+                     3: ['3rd', 'oklch(0.9 0.05 55)', 'oklch(0.38 0.07 50)'] };
+    const m = medals[rank];
+    return {
+      rankBg: rank === 1 ? '#1c1d1f' : top ? '#f0efec' : 'transparent',
+      rankColor: rank === 1 ? '#fff' : top ? '#1c1d1f' : '#9a9c9f',
+      rankBorder: rank === 1 ? '#1c1d1f' : top ? '#e0dfdb' : 'transparent',
+      rankWeight: top ? '700' : '500',
+      rankSize: rank === 1 ? '15px' : '14px',
+      weight: isMe || top ? '700' : '500',
+      bg: isMe ? 'oklch(0.97 0.02 262)' : top ? '#fdfcfb' : '#fff',
+      shadow: rank === 1 ? 'inset 3px 0 0 #1c1d1f' : top ? 'inset 3px 0 0 #e0dfdb' : 'none',
+      hasMedal: !!m, medal: m ? m[0] : '', medalBg: m ? m[1] : '', medalFg: m ? m[2] : '',
+      isMe: !!isMe
+    };
+  }
+
   ranking(key) {
     const rows = this.db.members
       .filter(m => m.status === 'active' && Date.parse(m.joinedAt) < this.monthEnd(key))
@@ -3015,6 +3150,12 @@ class Component extends DCLogic {
       on ? 'Cleared from your Home screen' : 'Back on your Home screen');
   }
   dismissNudge(id) { this.send('/api/nudges/dismiss', { id }, 'Nudge cleared'); }
+  /** Home alerts are per-member and never touch the underlying opportunity. */
+  dismissAlert(kind, refId) { this.send('/api/alerts/dismiss', { kind, refId }, 'Alert cleared'); }
+  alertDismissed(kind, refId) {
+    return (this.db.alertDismissals || []).some(d =>
+      d.memberId === this.me.id && d.kind === kind && d.refId === refId);
+  }
 
   approveOpp(oppId) {
     this.send('/api/opportunities/review', { opportunityId: oppId, decision: 'approve' },
@@ -3966,6 +4107,17 @@ class Component extends DCLogic {
       };
     });
 
+    const adminRankOf = metric => this.rankingBy(rankMonth, metric).map(r => Object.assign({
+      name: r.name,
+      rank: String(r.rank),
+      value: String(metric === 'completed' ? r.s.completed : r.s.submitted),
+      sub: metric === 'completed'
+        ? r.s.submitted + ' found' + (r.s.rate === null ? '' : ' \u00b7 ' + r.s.rate + '% completion')
+        : r.s.completed + (r.s.completed === 1 ? ' tag completed' : ' tags completed')
+    }, this.rankStyle(r.rank, r.id === me.id)));
+    const adminTagRank = adminRankOf('completed');
+    const adminFoundRank = adminRankOf('submitted');
+
     const adminRankRows = this.ranking(rankMonth).map(r => ({
       rank: r.rank, name: r.name, completed: r.s.completed, submitted: r.s.submitted,
       missed: r.s.missed, missColor: r.s.missed > 4 ? 'oklch(0.5 0.16 25)' : '#4a4c4f',
@@ -3980,23 +4132,28 @@ class Component extends DCLogic {
     const remaining = Math.max(0, goal - s.completed);
     const avPalette = ['oklch(0.52 0.16 262)', 'oklch(0.58 0.11 262)', 'oklch(0.64 0.08 262)', 'oklch(0.7 0.06 262)'];
     const initialsOf = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
-    const boardRows = rankTable.map(r => ({
-      rank: String(r.rank), name: r.name, business: r.business,
-      completed: String(r.s.completed),
-      rate: r.s.rate === null ? '\u2014' : r.s.rate + '%',
-      initials: initialsOf(r.name),
-      photo: (this.member(r.id) || {}).avatar || '',
-      photoImg: (this.member(r.id) || {}).avatar
-        ? React.createElement('img', { src: this.member(r.id).avatar, alt: '', loading: 'lazy', decoding: 'async', style: { width: 34, height: 34, borderRadius: 18, objectFit: 'cover', display: 'block' } }) : null,
-      hasPhoto: !!(this.member(r.id) || {}).avatar,
-      noPhoto: !(this.member(r.id) || {}).avatar,
-      avBg: r.id === me.id ? 'oklch(0.52 0.16 262)' : r.rank <= 3 ? avPalette[r.rank] : '#e8e7e3',
-      avFg: r.id === me.id || r.rank <= 3 ? '#fff' : '#4a4c4f',
-      bg: r.id === me.id ? 'oklch(0.97 0.02 262)' : r.rank <= 3 ? '#faf9f7' : '#fff',
-      weight: r.id === me.id ? '700' : '500',
-      rankColor: r.rank <= 3 ? 'oklch(0.52 0.16 262)' : '#9a9c9f',
-      rankWeight: r.rank <= 3 ? '700' : '500'
-    }));
+    const boardMetric = st.boardMetric === 'submitted' ? 'submitted' : 'completed';
+    const boardTable = this.rankingBy(rankMonth, boardMetric);
+    const boardRows = boardTable.map(r => {
+      const mem = this.member(r.id) || {};
+      const isMe = r.id === me.id;
+      const value = boardMetric === 'completed' ? r.s.completed : r.s.submitted;
+      return Object.assign({
+        rank: String(r.rank), name: r.name, business: r.business,
+        value: String(value),
+        sub: boardMetric === 'completed'
+          ? (r.s.rate === null ? '\u2014' : r.s.rate + '%')
+          : r.s.completed + ' tags',
+        initials: initialsOf(r.name),
+        photo: mem.avatar || '',
+        photoImg: mem.avatar
+          ? React.createElement('img', { src: mem.avatar, alt: '', loading: 'lazy', decoding: 'async', style: { width: 34, height: 34, borderRadius: 18, objectFit: 'cover', display: 'block' } }) : null,
+        hasPhoto: !!mem.avatar,
+        noPhoto: !mem.avatar,
+        avBg: isMe ? 'oklch(0.52 0.16 262)' : r.rank <= 3 ? avPalette[r.rank] : '#e8e7e3',
+        avFg: isMe || r.rank <= 3 ? '#fff' : '#4a4c4f'
+      }, this.rankStyle(r.rank, isMe));
+    });
 
     const mf = st.mf;
     const myPrefs = this.prefsOf(me.id);
@@ -4250,11 +4407,24 @@ class Component extends DCLogic {
       pausedCount: s.completed + (s.completed === 1 ? ' tag completed this month' : ' tags completed this month'),
       pausedNote: 'No monthly requirement applies while you are out of the rotation. An admin can add you back from the member list.',
       boardRows,
+      boardMetricLabel: boardMetric === 'completed' ? 'Tags' : 'Posts',
+      boardTabs: [
+        { key: 'completed', label: 'Most tags completed' },
+        { key: 'submitted', label: 'Most posts found' }
+      ].map(t => {
+        const on = boardMetric === t.key;
+        return {
+          label: t.label, active: on ? 'true' : 'false',
+          bg: on ? '#fff' : 'transparent', fg: on ? '#1c1d1f' : '#6b6d70',
+          shadow: on ? '0 1px 2px rgba(20,20,22,0.1)' : 'none',
+          onClick: () => this.setState({ boardMetric: t.key })
+        };
+      }),
       podium: boardRows.slice(0, 3).map((r, i) => {
         const first = r.name.split(' ')[0];
         const gold = i === 0;
         return {
-          initials: r.initials, first, completed: r.completed, rate: r.rate,
+          initials: r.initials, first, completed: r.value, rate: r.sub,
           place: i === 0 ? '1st' : i === 1 ? '2nd' : '3rd',
           bg: gold ? '#1c1d1f' : '#fff',
           border: gold ? '#1c1d1f' : '#e6e5e2',
@@ -4267,9 +4437,12 @@ class Component extends DCLogic {
       }),
       hasPodium: boardRows.length >= 3,
       restRows: boardRows.slice(3),
-      boardFootnote: rankMonth === thisMonth
-        ? 'Ranked by tags completed this month, updating as tags are recorded. Ties go to whoever reached the count first.'
-        : 'Final standings for ' + this.monthName(rankMonth) + '.',
+      boardFootnote: (rankMonth === thisMonth
+        ? (boardMetric === 'completed'
+            ? 'Ranked by tags completed this month, updating as tags are recorded.'
+            : 'Ranked by posts found this month, updating as posts are submitted.')
+        : 'Final standings for ' + this.monthName(rankMonth) + '.')
+        + ' Equal counts share a rank.',
       homeCta: s.openNow ? 'Start tagging (' + s.openNow + ')' : 'Browse opportunities',
       rankLabel: myRow ? '#' + myRow.rank + ' of ' + rank.length : '\u2014',
       rankDelta: !prevRow || !myRow ? 'First month ranked'
@@ -4720,16 +4893,24 @@ class Component extends DCLogic {
         [],
         pendingShares.length
           ? [{ text: pendingShares.length === 1 ? 'A member shared a tag with you \u2014 review it on the Opportunities tab.' : pendingShares.length + ' members shared tags with you \u2014 review them on the Opportunities tab.' }] : [],
+        // Opportunity review alerts: dismissible by the finder, and gone on
+        // their own 24 hours after the owner decided. Deliberately separate
+        // from admin announcements, which have their own viewed/dismissed/expiry.
         db.opportunities
           .filter(o => o.submittedById === me.id && o.reviewedById && o.reviewedById !== me.id
-            && (o.status === 'active' || o.status === 'declined'))
+            && (o.status === 'active' || o.status === 'declined')
+            && this.now() - (Date.parse(o.reviewedAt || o.createdAt) || 0) < DAY
+            && !this.alertDismissed('opp_review', o.id))
           .sort((p, n) => Date.parse(n.reviewedAt || n.createdAt) - Date.parse(p.reviewedAt || p.createdAt))
           .slice(0, 2)
           .map(o => ({
             text: o.status === 'active'
               ? 'Thank you for finding this opportunity for ' + o.businessDisplayName + '! It was approved and is now live for the team.'
               : 'Thank you for finding this opportunity for ' + o.businessDisplayName + '. The business owner reviewed it and decided not to post it.'
-                + (o.declineReason ? ' Reason: ' + o.declineReason : '')
+                + (o.declineReason ? ' Reason: ' + o.declineReason : ''),
+            canDismiss: true,
+            dismissAria: 'Dismiss this update about ' + o.businessDisplayName,
+            onDismiss: () => this.dismissAlert('opp_review', o.id)
           }))
       ),
 
@@ -5083,7 +5264,7 @@ class Component extends DCLogic {
       onCancelMember: () => this.setState({ mf: null, mfError: '' }),
       onSaveMember: () => {
         const f = st.mf;
-        if (!f.id && !f.owner.trim()) { this.setState({ mfError: 'Enter the business owner\u2019s name.' }); return; }
+        if (!f.owner.trim()) { this.setState({ mfError: 'Enter the business owner\u2019s name.' }); return; }
         const email = f.email.trim().toLowerCase();
         if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) { this.setState({ mfError: 'Enter a valid email address.' }); return; }
         if (db.members.some(m => m.email.toLowerCase() === email && m.id !== f.id)) {
@@ -5093,11 +5274,15 @@ class Component extends DCLogic {
         if (f.id === me.id && f.role !== 'admin') { this.setState({ mfError: 'You cannot remove your own admin role.' }); return; }
         const now = this.stamp();
         if (f.id) {
-          const jobs = [];
-          if (f.role !== (this.member(f.id) || {}).role) {
-            jobs.push(this.api('/api/admin/members/role', { id: f.id, role: f.role }));
-          }
-          Promise.all(jobs)
+          // Details first, then role: both land before the single refresh, so
+          // the member list, rankings and every selector show the new name at once.
+          this.api('/api/admin/members/update', {
+            id: f.id, email, businessOwnerName: f.owner.trim(),
+            businessName: f.business.trim(), tagGroup: f.tagGroup
+          })
+            .then(() => f.role !== (this.member(f.id) || {}).role
+              ? this.api('/api/admin/members/role', { id: f.id, role: f.role })
+              : null)
             .then(() => this.refresh({ quiet: true }))
             .then(() => { this.setState({ mf: null, mfError: '' }); this.flash('Member updated'); })
             .catch(e => this.setState({ mfError: String(e.message || e) }));
@@ -5124,7 +5309,7 @@ class Component extends DCLogic {
         });
         this.flash(n ? n + (n === 1 ? ' member nudged' : ' members nudged') : 'Everyone was already nudged in the last 24 hours');
       },
-      adminRankRows,
+      adminRankRows, adminTagRank, adminFoundRank,
 
       // groups to join
       groupSearch: st.groupSearch,
