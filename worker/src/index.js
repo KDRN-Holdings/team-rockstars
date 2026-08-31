@@ -368,8 +368,10 @@ async function bootstrap(me, env) {
       id: o.id, beneficiaryId: o.beneficiary_id, businessId: o.business_id,
       businessDisplayName: o.business_display_name, submittedById: o.submitted_by_id,
       facebookUrl: o.facebook_url, facebookGroupName: o.facebook_group_name,
-      // Records written before Nextdoor support have no platform: Facebook.
-      platform: (('platform' in o) && o.platform === 'nextdoor') ? 'nextdoor' : 'facebook',
+      // The stored value is returned as-is. Only a legacy row with no value at
+      // all (column absent, NULL, or empty) falls back to Facebook.
+      platform: (o.platform === null || o.platform === undefined || o.platform === '')
+        ? 'facebook' : o.platform,
       location: o.location, status: o.status,
       serviceId: ('service_id' in o) ? o.service_id : null,
       serviceName: ('service_name' in o) ? (o.service_name || '') : '',
@@ -774,6 +776,14 @@ const routes = {
       ).bind(...cols, ...extras, platform).run();
     } catch (e) {
       if (!missingCol(e)) throw e;
+      // Without the platform column a Nextdoor post would be saved and shown as
+      // Facebook, so refuse it with an actionable message instead.
+      if (platform === 'nextdoor') {
+        throw {
+          status: 503,
+          error: 'Nextdoor posts need the latest database update. Run npm run db:migrate, then try again.'
+        };
+      }
       try {
         res = await env.DB.prepare(
           `INSERT INTO opportunities
@@ -1458,18 +1468,28 @@ const RETENTION = {
 
 const monthKeyOf = iso => String(iso || '').slice(0, 7);
 
-/** Every month with activity, oldest first, excluding the current month. */
+/**
+ * Past months with activity that have NOT been snapshotted yet, oldest first.
+ * A month already carrying closed_at is deliberately excluded: once written,
+ * a snapshot is frozen, so later cleanup can never recompute it from the
+ * smaller data set it leaves behind.
+ */
 async function closableMonths(env) {
-  const now = new Date();
-  const current = now.toISOString().slice(0, 7);
-  const rows = await env.DB.prepare(
-    `SELECT DISTINCT substr(created_at,1,7) AS m FROM opportunities
-      UNION SELECT DISTINCT substr(completed_at,1,7) FROM member_opportunity_status
-       WHERE completed_at IS NOT NULL`
-  ).all();
+  const current = new Date().toISOString().slice(0, 7);
+  const [rows, closed] = await Promise.all([
+    env.DB.prepare(
+      `SELECT DISTINCT substr(created_at,1,7) AS m FROM opportunities
+        UNION SELECT DISTINCT substr(completed_at,1,7) FROM member_opportunity_status
+         WHERE completed_at IS NOT NULL`
+    ).all(),
+    env.DB.prepare(
+      `SELECT DISTINCT month_key AS m FROM monthly_participation WHERE closed_at IS NOT NULL`
+    ).all()
+  ]);
+  const done = new Set((closed.results || []).map(r => r.m));
   return (rows.results || [])
     .map(r => r.m)
-    .filter(m => m && m < current)
+    .filter(m => m && m < current && !done.has(m))
     .sort();
 }
 
@@ -1481,6 +1501,13 @@ async function closableMonths(env) {
 async function snapshotMonth(env, monthKey) {
   const goalRow = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'monthly_tag_goal'`).first();
   const goal = +((goalRow && goalRow.value) || 25);
+  // These four definitions mirror statsPeriod() in the app exactly. If one
+  // changes there, change it here too, or a month's numbers will visibly shift
+  // the moment it flips from live computation to its snapshot.
+  //   tags       completed status rows, by completion date
+  //   posts      published, non-archived opportunities, by submission date
+  //   eligible   cohort rows, excluding every "unable" family status
+  //   missed     cohort rows still not completed
   const rows = await env.DB.prepare(
     `SELECT m.id AS member_id,
             (SELECT COUNT(*) FROM member_opportunity_status s
@@ -1488,12 +1515,15 @@ async function snapshotMonth(env, monthKey) {
                 AND substr(s.completed_at,1,7) = ?1)                       AS tags_completed,
             (SELECT COUNT(*) FROM opportunities o
               WHERE o.submitted_by_id = m.id AND o.status = 'active'
+                AND o.archived_at IS NULL
                 AND substr(o.created_at,1,7) = ?1)                         AS posts_found,
             (SELECT COUNT(*) FROM member_opportunity_status s
-              WHERE s.member_id = m.id AND s.status <> 'unable'
+              WHERE s.member_id = m.id
+                AND s.status NOT IN ('not_member','join_pending','banned','unable')
                 AND substr(s.eligible_from,1,7) = ?1)                      AS eligible,
             (SELECT COUNT(*) FROM member_opportunity_status s
-              WHERE s.member_id = m.id AND s.status = 'open'
+              WHERE s.member_id = m.id
+                AND s.status NOT IN ('not_member','join_pending','banned','unable','completed')
                 AND substr(s.eligible_from,1,7) = ?1)                      AS missed
        FROM members m`
   ).bind(monthKey).all();
@@ -1503,14 +1533,13 @@ async function snapshotMonth(env, monthKey) {
   let rank = 0, prev = null;
   const stmts = list.map((r, i) => {
     if (r.tags_completed !== prev) { rank = i + 1; prev = r.tags_completed; }
+    // DO NOTHING, never DO UPDATE: an existing snapshot row is history and is
+    // never rewritten. Re-running the job is therefore a no-op for that month.
     return env.DB.prepare(
       `INSERT INTO monthly_participation
          (month_key, member_id, tags_completed, posts_found, eligible, missed, rank, goal, closed_at)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8, datetime('now'))
-       ON CONFLICT (month_key, member_id) DO UPDATE SET
-         tags_completed = excluded.tags_completed, posts_found = excluded.posts_found,
-         eligible = excluded.eligible, missed = excluded.missed, rank = excluded.rank,
-         goal = excluded.goal, closed_at = COALESCE(monthly_participation.closed_at, excluded.closed_at)`
+       ON CONFLICT (month_key, member_id) DO NOTHING`
     ).bind(monthKey, r.member_id, r.tags_completed, r.posts_found, r.eligible, r.missed, rank, goal);
   });
   if (stmts.length) await env.DB.batch(stmts);

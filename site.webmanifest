@@ -1,0 +1,19 @@
+{
+  "name": "Team Rockstars",
+  "short_name": "Rockstars",
+  "description": "Find and tag Facebook and Nextdoor opportunities for the Team Rockstars chapter.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eeedea",
+  "theme_color": "#1c1d1f",
+  "icons": [
+    {
+      "src": "star-icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

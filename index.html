@@ -10,6 +10,16 @@
 <x-dc>
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Team Rockstars</title>
+<meta name="application-name" content="Team Rockstars" />
+<meta name="theme-color" content="#1c1d1f" />
+<link rel="icon" type="image/png" href="star-icon.png" />
+<link rel="apple-touch-icon" href="star-icon.png" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Rockstars" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -2832,8 +2842,10 @@ class Component extends DCLogic {
       members,
       businesses: data.businesses || [],
       services: data.services || [],
+      // Keep whatever the server sent; only a legacy row with no value falls
+      // back to Facebook. Never coerce a real platform value away.
       opportunities: (data.opportunities || []).map(o => ({
-        ...o, platform: o.platform === 'nextdoor' ? 'nextdoor' : 'facebook'
+        ...o, platform: o.platform || 'facebook'
       })),
       statuses: data.statuses || [],
       comments: data.comments || [],
@@ -2928,6 +2940,15 @@ class Component extends DCLogic {
   }
   // Seeing the nudge on Home counts as viewing it; dismissing is separate.
   componentDidUpdate() {
+    // The Submit form defaults to the logged-in member. Write that into state
+    // as soon as the screen opens: the old code only rendered it as the select's
+    // value, so validation saw an empty beneficiaryId and refused to post.
+    if (!this.state.loading && this.state.screen === 'submit'
+        && !this.state.form.beneficiaryId && this.me) {
+      this.setState(s => s.form.beneficiaryId
+        ? null
+        : { form: this.beneficiarySelection(this.me.id, s.form), formError: '' });
+    }
     if (this.state.loading || this.state.screen !== 'home') return;
     if (this._nudgeViewBusy || this._nudgeViewFailed) return;
     const me = this.me;
@@ -3035,7 +3056,12 @@ class Component extends DCLogic {
           completed: r.tags_completed || 0, submitted: r.posts_found || 0,
           forMe: 0, received: 0, unable: 0, missed: r.missed || 0, openNow: 0, lastAt: 0,
           eligible: r.eligible || 0,
-          rate: r.eligible ? Math.round(((r.tags_completed || 0) / r.eligible) * 100) : null
+          // Same definition as statsPeriod: completed cohort / cohort. Derived
+          // from missed rather than tags_completed, which can include tags
+          // finished in a later month than they became eligible.
+          rate: r.eligible
+            ? Math.round((((r.eligible || 0) - (r.missed || 0)) / r.eligible) * 100)
+            : null
         }
       };
     });
@@ -3255,6 +3281,23 @@ class Component extends DCLogic {
     if ((this.state.dismissedAlerts || []).indexOf(kind + ':' + refId) > -1) return true;
     return (this.db.alertDismissals || []).some(d =>
       d.memberId === this.me.id && d.kind === kind && d.refId === refId);
+  }
+
+  /**
+   * Selecting the opportunity owner. Used by the dropdown AND by the default
+   * applied when the Submit screen opens, so the visible value and the stored
+   * beneficiaryId can never disagree.
+   */
+  beneficiarySelection(id, prev) {
+    const m = this.member(+id);
+    const choices = id ? this.serviceChoicesFor(+id) : [];
+    return {
+      ...prev, beneficiaryId: String(id || ''),
+      business: m ? m.businessName : prev.business,
+      // Auto-pick when the owner offers exactly one business/service.
+      serviceKey: choices.length === 1 ? choices[0].value : '',
+      review: +id === this.me.id ? 'now' : prev.review
+    };
   }
 
   approveOpp(oppId) {
@@ -4297,7 +4340,9 @@ class Component extends DCLogic {
 
     const submitOpp = (force, forceFit) => {
       const f = st.form;
-      const benId = +(f.beneficiaryId || 0);
+      // Same fallback the dropdown displays, so a visibly-selected owner can
+      // never fail validation.
+      const benId = +(f.beneficiaryId || me.id || 0);
       const url = f.url.trim();
       if (!benId) { this.setState({ formError: 'Choose which business owner this opportunity is for.', formDupe: '' }); return; }
       const choices = this.serviceChoicesFor(benId);
@@ -4658,23 +4703,10 @@ class Component extends DCLogic {
       formBeneficiary: defaultBenef,
       formType: st.form.type || 'Post',
       onFormType: e => setForm('type', e.target.value),
-      onFormBeneficiary: e => {
-        const id = e.target.value;
-        const m = this.member(+id);
-        this.setState({
-          form: {
-            ...st.form, beneficiaryId: id,
-            business: m ? m.businessName : st.form.business,
-            // Auto-pick when the owner offers exactly one thing.
-            serviceKey: (() => {
-              const ch = id ? this.serviceChoicesFor(+id) : [];
-              return ch.length === 1 ? ch[0].value : '';
-            })(),
-            review: +id === me.id ? 'now' : st.form.review
-          },
-          formError: '', formDupe: '', formWarn: null
-        });
-      },
+      onFormBeneficiary: e => this.setState({
+        form: this.beneficiarySelection(e.target.value, st.form),
+        formError: '', formDupe: '', formWarn: null
+      }),
       formBusiness: st.form.business || (this.member(+defaultBenef) || {}).businessName || '',
       onFormBusiness: e => setForm('business', e.target.value),
       formUrl: st.form.url, onFormUrl: e => setForm('url', e.target.value),
@@ -4715,14 +4747,14 @@ class Component extends DCLogic {
       }),
       urlLabel: (this.platforms[st.form.platform] || this.platforms.facebook).label + ' post link',
       urlPlaceholder: (this.platforms[st.form.platform] || this.platforms.facebook).placeholder,
-      showServicePicker: !!st.form.beneficiaryId,
+      showServicePicker: !!defaultBenef,
       serviceOptions: [{ value: '', label: 'Select a service' }]
-        .concat(st.form.beneficiaryId ? this.serviceChoicesFor(+st.form.beneficiaryId).map(c2 => ({ value: c2.value, label: c2.label })) : []),
+        .concat(defaultBenef ? this.serviceChoicesFor(+defaultBenef).map(c2 => ({ value: c2.value, label: c2.label })) : []),
       formService: st.form.serviceKey,
       onFormService: e => setForm('serviceKey', e.target.value),
       serviceHint: (() => {
-        if (!st.form.beneficiaryId) return '';
-        const ch = this.serviceChoicesFor(+st.form.beneficiaryId);
+        if (!defaultBenef) return '';
+        const ch = this.serviceChoicesFor(+defaultBenef);
         if (!ch.length) return 'This owner has not added a business yet.';
         if (ch.length === 1) return 'Going to ' + ch[0].label + '.';
         return 'Services come from this owner\u2019s business profiles.';
