@@ -423,8 +423,7 @@
                   <button type="button" onClick="{{ c.onToggle }}" aria-expanded="{{ c.expandedAttr }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:50px;justify-content:center;background:none;border:none;padding:0;cursor:pointer;text-align:left">
                     <span style="display:flex;align-items:center;gap:6px;width:100%;min-width:0">
                       <span aria-hidden="true" style="flex:none;width:7px;height:7px;border-radius:4px;background:{{ c.dot }}"></span>
-                      <span style="flex:1;min-width:0;font-size:15px;font-weight:600;color:{{ c.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.business }}</span>
-                      <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;background:{{ c.platformBg }};color:{{ c.platformFg }}">{{ c.platform }}</span>
+                      <span style="flex:1;min-width:0;font-size:15px;font-weight:700;color:{{ c.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.business }}</span>
                     </span>
                     <sc-if value="{{ c.hasService }}" hint-placeholder-val="{{ false }}">
                       <span style="display:block;width:100%;font-size:13px;font-weight:600;color:oklch(0.45 0.14 262);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.serviceName }}</span>
@@ -533,18 +532,23 @@
             </div>
           </sc-if>
         <sc-if value="{{ showMyBiz }}" hint-placeholder-val="{{ false }}">
-          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Posts for my business</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Posts for my business</div>
+            <div style="font-size:12.5px;color:#6b6d70;margin-top:2px">Already live &mdash; the rest of the team can tag these now. Nothing here is waiting on you.</div>
+          </div>
           <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
             <sc-for list="{{ myBizCards }}" as="b" hint-placeholder-count="4">
               <div style="border-bottom:1px solid #f2f1ee;background:{{ b.rowBg }}">
                 <div style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 12px">
                   <button type="button" onClick="{{ b.onToggle }}" aria-expanded="{{ b.expandedAttr }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:50px;justify-content:center;background:none;border:none;padding:0;cursor:pointer;text-align:left">
                     <span style="display:flex;align-items:center;gap:6px;width:100%;min-width:0">
-                      <span style="flex:1;min-width:0;font-size:14px;font-weight:600;color:{{ b.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.title }}</span>
+                      <span style="flex:1;min-width:0;font-size:15px;font-weight:700;color:{{ b.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.title }}</span>
                     </span>
+                    <sc-if value="{{ b.hasService }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:block;width:100%;font-size:13px;font-weight:600;color:oklch(0.45 0.14 262);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.serviceLine }}</span>
+                    </sc-if>
                     <span style="display:block;width:100%;font-size:12px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.subline }}</span>
                   </button>
-                  <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.platformBg }};color:{{ b.platformFg }}">{{ b.platform }}</span>
                   <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.chipBg }};color:{{ b.chipFg }}">{{ b.chip }}</span>
                   <button type="button" onClick="{{ b.onOpen }}" aria-label="{{ b.openAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:#1c1d1f;color:#fff;cursor:pointer" style-hover="background:#34373e">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
@@ -3787,7 +3791,7 @@ class Component extends DCLogic {
       return {
         business: o.businessDisplayName,
         hasService: !!o.serviceName,
-        serviceName: o.serviceName || '',
+        serviceName: o.serviceName ? 'Service: ' + o.serviceName : '',
         owner: ben ? ben.businessOwnerName || ben.fullName : 'Former member',
         submittedBy: sub ? sub.fullName : 'Removed member',
         groupName: o.facebookGroupName || '',
@@ -3857,11 +3861,12 @@ class Component extends DCLogic {
         const declined = (o.status || 'active') === 'declined';
         const expanded = st.expandedId === o.id;
         return {
-          title: o.serviceName || o.notes || o.businessDisplayName || 'Facebook post',
-          subline: [o.serviceName ? o.businessDisplayName : '',
-            'Found by ' + (sub ? sub.fullName.split(' ')[0] : 'a former member'),
+          title: o.businessDisplayName || 'Opportunity',
+          hasService: !!o.serviceName,
+          serviceLine: o.serviceName ? 'Service: ' + o.serviceName : '',
+          subline: ['Found by ' + (sub ? sub.fullName.split(' ')[0] : 'a former member'),
             this.ago(o.createdAt)].filter(Boolean).join(' \u00b7 '),
-          chip: declined ? 'Declined' : done + ' tagged',
+          chip: declined ? 'Declined' : done ? done + ' tagged' : 'Live',
           chipBg: declined ? '#eeedea' : 'oklch(0.95 0.05 155)',
           chipFg: declined ? '#4a4c4f' : 'oklch(0.38 0.1 155)',
           type: o.type || 'Post',
