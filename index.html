@@ -3276,6 +3276,20 @@ class Component extends DCLogic {
   }
   dismissNudge(id) { this.send('/api/nudges/dismiss', { id }, 'Nudge cleared'); }
   /** Home alerts are per-member and never touch the underlying opportunity. */
+  /**
+   * The owner's personal state for a post on their own business. Stored as a
+   * per-member dismissal, never as a member_opportunity_status row, so it can
+   * never reach tag counts, rankings or participation. 'own_done' = I commented,
+   * 'own_skip' = I am not commenting.
+   */
+  clearOwnCard(oppId, kind) {
+    this.send('/api/alerts/dismiss', { kind, refId: oppId },
+      kind === 'own_done' ? 'Cleared from your list' : 'Skipped');
+  }
+  ownCardCleared(oppId) {
+    return this.alertDismissed('own_done', oppId) || this.alertDismissed('own_skip', oppId);
+  }
+
   dismissAlert(kind, refId) {
     const key = kind + ':' + refId;
     if ((this.state.dismissedAlerts || []).indexOf(key) > -1) return;
@@ -3762,7 +3776,8 @@ class Component extends DCLogic {
       .filter(o => o.beneficiaryId === me.id
         && o.submittedById === me.id
         && (o.status || 'active') === 'active'
-        && !myStatuses.some(x => x.opportunityId === o.id))
+        && !myStatuses.some(x => x.opportunityId === o.id)
+        && !this.ownCardCleared(o.id))
       .map(o => ({ o, x: { opportunityId: o.id, memberId: me.id, status: 'open', ownerView: true,
                            statusChangedAt: o.createdAt, eligibleFrom: o.createdAt } }));
 
@@ -3824,18 +3839,17 @@ class Component extends DCLogic {
         rowBg: expanded ? '#faf9f7' : '#fff',
         expanded, expandedAttr: expanded ? 'true' : 'false',
         onToggle: () => this.setState({ expandedId: expanded ? null : o.id }),
-        chip: x.ownerView ? 'My business'
-          : x.status === 'completed' ? '\u2713 ' + this.fmt(x.completedAt) : stat.label,
-        chipBg: x.ownerView ? 'oklch(0.96 0.025 262)'
-          : x.status === 'completed' ? 'oklch(0.95 0.05 155)' : stat.bg,
-        chipFg: x.ownerView ? 'oklch(0.4 0.14 262)'
-          : x.status === 'completed' ? 'oklch(0.38 0.1 155)' : stat.fg,
+        chip: x.status === 'completed' ? '\u2713 ' + this.fmt(x.completedAt) : stat.label,
+        chipBg: x.status === 'completed' ? 'oklch(0.95 0.05 155)' : stat.bg,
+        chipFg: x.status === 'completed' ? 'oklch(0.38 0.1 155)' : stat.fg,
         platform: this.platformOf(o).label,
         platformBg: this.platformOf(o).bg,
         platformFg: this.platformOf(o).fg,
         openLabel: 'Open ' + this.platformOf(o).label + ' post',
         openAria: 'Open ' + this.platformOf(o).label + ' post for ' + o.businessDisplayName,
-        completeAria: 'Mark tag complete for ' + o.businessDisplayName,
+        completeAria: x.ownerView
+          ? 'I commented \u2014 clear ' + o.businessDisplayName + ' from my list'
+          : 'Mark tag complete for ' + o.businessDisplayName,
         hasFit: true,
         fitAria: 'Business preferences for ' + o.businessDisplayName,
         onFit: () => this.setState({ prefsSheet: o.beneficiaryId }),
@@ -3844,9 +3858,7 @@ class Component extends DCLogic {
         titleColor: x.status === 'open' ? '#1c1d1f' : '#4a4c4f',
         isOpen: x.status === 'open',
         isDone: x.status !== 'open',
-        doneLabel: x.ownerView
-          ? 'Live for the team \u00b7 tags on your own business do not count for you'
-          : x.status === 'completed'
+        doneLabel: x.status === 'completed'
           ? 'Tagged ' + this.fmt(x.completedAt) + ' at ' + new Date(x.completedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
           : stat.label + ' \u00b7 ' + this.fmt(x.statusChangedAt),
         copyLabel,
@@ -3859,18 +3871,26 @@ class Component extends DCLogic {
           });
         },
         onOpen: () => this.openExternal(o.facebookUrl),
-        cantAria: 'I cannot comment on ' + o.businessDisplayName,
+        cantAria: x.ownerView
+          ? 'Not commenting \u2014 clear ' + o.businessDisplayName + ' from my list'
+          : 'I cannot comment on ' + o.businessDisplayName,
         hasReason: !!x.reason,
         reasonLabel: x.reason ? 'Reason: ' + x.reason : '',
-        onComplete: () => this.setStatus(o.id, 'completed'),
-        onCant: () => this.setState({ sheet: { oppId: o.id, business: o.businessDisplayName }, sheetOtherText: '' }),
+        // For an owner card these clear only the owner's own view. No status
+        // row is written, so team tag counts and rankings are untouched.
+        onComplete: () => x.ownerView
+          ? this.clearOwnCard(o.id, 'own_done')
+          : this.setStatus(o.id, 'completed'),
+        onCant: () => x.ownerView
+          ? this.clearOwnCard(o.id, 'own_skip')
+          : this.setState({ sheet: { oppId: o.id, business: o.businessDisplayName }, sheetOtherText: '' }),
         onReopen: () => this.setStatus(o.id, 'open'),
         // Owner of the business this post is for: full comment workflow, no
         // tagging controls, because self-tagging must never earn credit.
         ownerView: !!x.ownerView,
-        canTag: x.status === 'open' && !x.ownerView,
+        canTag: x.status === 'open',
         canComment: x.status === 'open',
-        showDoneChip: x.status !== 'open' || !!x.ownerView
+        showDoneChip: x.status !== 'open'
       };
     };
     const cards = rowsOpp.map(cardFor);

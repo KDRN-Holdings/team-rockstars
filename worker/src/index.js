@@ -1652,8 +1652,12 @@ async function retentionSweep(env) {
   // Review-alert dismissals: the alert stops rendering after 24 hours anyway,
   // so after 60 days the record has no job left. The opportunity and its
   // review decision are untouched.
+  // Only review-alert records age out. 'own_done' / 'own_skip' rows are a
+  // business owner's personal state for a post on their own business and must
+  // persist, or the card would reappear in their feed after 60 days.
   out.alertDismissals = await del('alertDismissals',
-    `DELETE FROM alert_dismissals WHERE dismissed_at < datetime('now', ?1)`,
+    `DELETE FROM alert_dismissals
+      WHERE kind = 'opp_review' AND dismissed_at < datetime('now', ?1)`,
     ['-' + D.alertDismissalDays + ' days']);
 
   // Per-member announcement rows: only dismissed ones, and only where the
