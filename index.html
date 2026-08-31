@@ -390,6 +390,14 @@
           </div>
         </sc-if>
 
+        <sc-if value="{{ showPlatformFilter }}" hint-placeholder-val="{{ true }}">
+          <div role="group" aria-label="Filter by platform" style="display:flex;gap:4px;background:#f0efec;border-radius:11px;padding:3px">
+            <sc-for list="{{ platformFilters }}" as="pf2" hint-placeholder-count="3">
+              <button type="button" aria-pressed="{{ pf2.active }}" onClick="{{ pf2.onClick }}" style="flex:1;min-width:0;min-height:40px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pf2.bg }};color:{{ pf2.fg }};box-shadow:{{ pf2.shadow }}">{{ pf2.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
         <sc-if value="{{ noCards }}" hint-placeholder-val="{{ false }}">
           <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:30px 18px;text-align:center">
             <div style="font-size:14px;font-weight:600;margin-bottom:5px">{{ emptyTitle }}</div>
@@ -406,6 +414,7 @@
                     <span style="display:flex;align-items:center;gap:6px;width:100%;min-width:0">
                       <span aria-hidden="true" style="flex:none;width:7px;height:7px;border-radius:4px;background:{{ c.dot }}"></span>
                       <span style="flex:1;min-width:0;font-size:15px;font-weight:600;color:{{ c.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.business }}</span>
+                      <span style="flex:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;background:{{ c.platformBg }};color:{{ c.platformFg }}">{{ c.platform }}</span>
                     </span>
                     <sc-if value="{{ c.hasService }}" hint-placeholder-val="{{ false }}">
                       <span style="display:block;width:100%;font-size:13px;font-weight:600;color:oklch(0.45 0.14 262);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.serviceName }}</span>
@@ -447,6 +456,7 @@
                       </div>
                     </sc-if>
                     <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px">
+                      <dt style="color:#9a9c9f">Platform</dt><dd style="margin:0;color:#38393b">{{ c.platform }}</dd>
                       <dt style="color:#9a9c9f">Owner</dt><dd style="margin:0;color:#38393b">{{ c.owner }}</dd>
                       <sc-if value="{{ c.hasGroup }}" hint-placeholder-val="{{ false }}">
                         <dt style="color:#9a9c9f">Group</dt><dd style="margin:0;color:#38393b">{{ c.groupName }}</dd>
@@ -457,6 +467,10 @@
                     </dl>
                     <sc-if value="{{ c.isOpen }}" hint-placeholder-val="{{ true }}">
                       <div style="display:flex;flex-direction:column;gap:8px">
+                        <button type="button" onClick="{{ c.onOpen }}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border:none;border-radius:11px;background:#1c1d1f;color:#fff;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#34373e">
+                          {{ c.openLabel }}
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
+                        </button>
                         <button type="button" onClick="{{ c.onCopy }}" style="width:100%;min-height:48px;padding:0 10px;border:1px solid oklch(0.86 0.055 262);border-radius:11px;background:oklch(0.97 0.02 262);color:oklch(0.4 0.14 262);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" style-hover="background:oklch(0.94 0.035 262)">{{ c.copyLabel }}</button>
                       </div>
                     </sc-if>
@@ -520,6 +534,7 @@
                     </span>
                     <span style="display:block;width:100%;font-size:12px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.subline }}</span>
                   </button>
+                  <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.platformBg }};color:{{ b.platformFg }}">{{ b.platform }}</span>
                   <span style="flex:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;background:{{ b.chipBg }};color:{{ b.chipFg }}">{{ b.chip }}</span>
                   <button type="button" onClick="{{ b.onOpen }}" aria-label="{{ b.openAria }}" style="width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;border:none;border-radius:11px;background:#1c1d1f;color:#fff;cursor:pointer" style-hover="background:#34373e">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
@@ -573,7 +588,7 @@
                 </div>
               </sc-if>
               <button type="button" onClick="{{ rc.onOpen }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;width:100%;border:none;border-radius:11px;background:#1c1d1f;color:#fff;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#34373e">
-                Open Facebook post
+                {{ rc.openLabel }}
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"></path><path d="M19 5l-8 8"></path><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"></path></svg>
               </button>
               <div style="display:flex;flex-direction:column;gap:8px">
@@ -614,7 +629,7 @@
       <div style="display:flex;flex-direction:column;gap:11px">
         <div>
           <h1 style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.025em">Submit an opportunity</h1>
-          <p style="margin:2px 0 0;color:#6b6d70;font-size:13px">A Facebook post where a Rockstar can be recommended.</p>
+          <p style="margin:2px 0 0;color:#6b6d70;font-size:13px">A Facebook or Nextdoor post where a Rockstar can be recommended.</p>
         </div>
         <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
           <div>
@@ -655,8 +670,16 @@
             </div>
           </div>
           <div>
-            <label for="tr-url" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Facebook post link</label>
-            <input id="tr-url" type="url" inputmode="url" value="{{ formUrl }}" onChange="{{ onFormUrl }}" placeholder="https://www.facebook.com/groups/..." style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
+            <span id="tr-plat-l" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">Platform</span>
+            <div role="radiogroup" aria-labelledby="tr-plat-l" style="display:flex;gap:4px;max-width:300px;background:#f0efec;border-radius:11px;padding:3px">
+              <sc-for list="{{ platformTabs }}" as="pt" hint-placeholder-count="2">
+                <button type="button" role="radio" aria-checked="{{ pt.active }}" onClick="{{ pt.onClick }}" style="flex:1;min-width:0;min-height:44px;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;background:{{ pt.bg }};color:{{ pt.fg }};box-shadow:{{ pt.shadow }}">{{ pt.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <label for="tr-url" style="display:block;font-size:12px;font-weight:600;color:#4a4c4f;margin-bottom:4px">{{ urlLabel }}</label>
+            <input id="tr-url" type="url" inputmode="url" value="{{ formUrl }}" onChange="{{ onFormUrl }}" placeholder="{{ urlPlaceholder }}" style="width:100%;max-width:300px;min-height:44px;padding:0 11px;border:1px solid #d9d8d4;border-radius:10px;font-size:14px;background:#fff;color:#1c1d1f" />
           </div>
           <sc-if value="{{ canSendForReview }}" hint-placeholder-val="{{ true }}">
             <div style="border-top:1px solid #e6e5e2;padding-top:10px;display:flex;flex-direction:column;gap:7px">
@@ -2209,10 +2232,10 @@ class Component extends DCLogic {
       screen: 'home', oppTab: 'open', oppSort: 'new', oppSearch: '', oppMember: '', expandedId: null, filtersOpen: false,
       loginEmail: '', loginError: '', authView: 'login', busy: false,
       codeEmail: '', codeValue: '', codeError: '',
-      form: { beneficiaryId: '', business: '', url: '', review: 'now', reviewNote: '', serviceKey: '' },
+      form: { beneficiaryId: '', business: '', url: '', platform: 'facebook', review: 'now', reviewNote: '', serviceKey: '' },
       formError: '', formDupe: '', svcForm: null, svcError: '',
       cf: { id: null, businessId: '', serviceId: '', label: '', text: '' }, cfError: '',
-      cSearch: '', range: 'this', rankMonth: '', boardMetric: 'completed', adminTab: 'overview', adminSearch: '',
+      cSearch: '', range: 'this', oppPlatform: 'all', rankMonth: '', boardMetric: 'completed', adminTab: 'overview', adminSearch: '',
       nudgeFor: null, nudgeText: '', dismissedAlerts: [],
       mf: null, mfError: '', profile: null, annForm: null, annError: '', expandedAnn: null,
       annDeclineFor: null, annDeclineText: '',
@@ -2401,12 +2424,13 @@ class Component extends DCLogic {
 
       case '/api/opportunities': {
         const dupe = s.opportunities.some(o => !o.archivedAt && o.facebookUrl === b.facebookUrl);
-        if (dupe && !b.force) throw new Error('This Facebook post has already been submitted.');
+        if (dupe && !b.force) throw new Error('This post has already been submitted.');
         const id = nid();
         s.opportunities.push({
           id, beneficiaryId: +b.beneficiaryId || meId, businessId: b.businessId || null,
           businessDisplayName: b.businessDisplayName || '', submittedById: meId,
           facebookUrl: b.facebookUrl || '', facebookGroupName: b.facebookGroupName || '',
+          platform: b.platform === 'nextdoor' ? 'nextdoor' : 'facebook',
           location: b.location || '', notes: (b.notes || '').slice(0, 300),
           serviceId: b.serviceId ? +b.serviceId : null, serviceName: b.serviceName || '',
           status: b.sendForReview ? 'pending_review' : 'active',
@@ -2808,7 +2832,9 @@ class Component extends DCLogic {
       members,
       businesses: data.businesses || [],
       services: data.services || [],
-      opportunities: data.opportunities || [],
+      opportunities: (data.opportunities || []).map(o => ({
+        ...o, platform: o.platform === 'nextdoor' ? 'nextdoor' : 'facebook'
+      })),
       statuses: data.statuses || [],
       comments: data.comments || [],
       announcements: data.announcements || [],
@@ -2991,9 +3017,33 @@ class Component extends DCLogic {
    *   metric 'submitted' — posts found; ties break on tags completed.
    * Equal counts share a rank number (1, 2, 2, 4) so nobody is ordered arbitrarily.
    */
+  /**
+   * Closed months are served from the server's monthly snapshot, so retention
+   * cleanup of old opportunity rows can never change a past month's standings.
+   * The current month is always computed live.
+   */
+  snapshotRows(key) {
+    const snap = (this.db.closedMonths || []).filter(r => r.month_key === key && r.closed_at);
+    if (!snap.length) return null;
+    return snap.map(r => {
+      const m = this.member(r.member_id);
+      return {
+        id: r.member_id,
+        name: m ? m.fullName : 'Former member',
+        business: m ? m.businessName : '',
+        s: {
+          completed: r.tags_completed || 0, submitted: r.posts_found || 0,
+          forMe: 0, received: 0, unable: 0, missed: r.missed || 0, openNow: 0, lastAt: 0,
+          eligible: r.eligible || 0,
+          rate: r.eligible ? Math.round(((r.tags_completed || 0) / r.eligible) * 100) : null
+        }
+      };
+    });
+  }
+
   rankingBy(key, metric) {
     const m2 = metric === 'submitted' ? 'submitted' : 'completed';
-    const rows = this.db.members
+    const rows = this.snapshotRows(key) || this.db.members
       .filter(m => m.status === 'active' && Date.parse(m.joinedAt) < this.monthEnd(key))
       .map(m => ({ id: m.id, name: m.fullName, business: m.businessName, s: this.stats(m.id, key) }));
     rows.sort((a, b) => m2 === 'completed'
@@ -3035,8 +3085,36 @@ class Component extends DCLogic {
     };
   }
 
+  /**
+   * Supported post sources. Records written before Nextdoor support have no
+   * platform value and are treated as Facebook.
+   */
+  get platforms() {
+    return {
+      facebook: {
+        key: 'facebook', label: 'Facebook',
+        // facebook.com / fb.com / fb.me, with any subdomain (www, m, web, l).
+        test: /^https:\/\/([\w-]+\.)*(facebook\.com|fb\.com|fb\.me)\/.+/i,
+        placeholder: 'https://www.facebook.com/groups/...',
+        bg: 'oklch(0.96 0.025 262)', fg: 'oklch(0.4 0.14 262)'
+      },
+      nextdoor: {
+        key: 'nextdoor', label: 'Nextdoor',
+        // Nextdoor paths vary a lot (/p/, /news_feed/, /pages/, city slugs),
+        // so the host is what is checked, not the shape of the path.
+        test: /^https:\/\/([\w-]+\.)*nextdoor\.[a-z.]{2,}\/.+/i,
+        placeholder: 'https://nextdoor.com/p/...',
+        bg: 'oklch(0.95 0.045 155)', fg: 'oklch(0.36 0.1 155)'
+      }
+    };
+  }
+  platformOf(o) {
+    const k = (o && o.platform) || 'facebook';
+    return this.platforms[k] || this.platforms.facebook;
+  }
+
   ranking(key) {
-    const rows = this.db.members
+    const rows = this.snapshotRows(key) || this.db.members
       .filter(m => m.status === 'active' && Date.parse(m.joinedAt) < this.monthEnd(key))
       .map(m => ({ id: m.id, name: m.fullName, business: m.businessName, s: this.stats(m.id, key) }));
     rows.sort((a, b) =>
@@ -3631,6 +3709,7 @@ class Component extends DCLogic {
       .map(x => ({ x, o: this.opp(x.opportunityId) }))
       .filter(r => r.o && !r.o.archivedAt && this.isPublished(r.o))
       .filter(r => !st.oppMember || String(r.o.beneficiaryId) === st.oppMember)
+      .filter(r => st.oppPlatform === 'all' || this.platformOf(r.o).key === st.oppPlatform)
       .filter(r => {
         if (!q) return true;
         const sub = this.member(r.o.submittedById);
@@ -3685,7 +3764,11 @@ class Component extends DCLogic {
         chip: x.status === 'completed' ? '\u2713 ' + this.fmt(x.completedAt) : stat.label,
         chipBg: x.status === 'completed' ? 'oklch(0.95 0.05 155)' : stat.bg,
         chipFg: x.status === 'completed' ? 'oklch(0.38 0.1 155)' : stat.fg,
-        openAria: 'Open Facebook post for ' + o.businessDisplayName,
+        platform: this.platformOf(o).label,
+        platformBg: this.platformOf(o).bg,
+        platformFg: this.platformOf(o).fg,
+        openLabel: 'Open ' + this.platformOf(o).label + ' post',
+        openAria: 'Open ' + this.platformOf(o).label + ' post for ' + o.businessDisplayName,
         completeAria: 'Mark tag complete for ' + o.businessDisplayName,
         hasFit: true,
         fitAria: 'Business preferences for ' + o.businessDisplayName,
@@ -3721,6 +3804,7 @@ class Component extends DCLogic {
     // -- opportunities posted for my own business (owner control) --
     const myBizCards = db.opportunities
       .filter(o => o.beneficiaryId === me.id && (o.status || 'active') === 'active')
+      .filter(o => st.oppPlatform === 'all' || this.platformOf(o).key === st.oppPlatform)
       .filter(o => !q || [o.notes, o.facebookGroupName, o.location].join(' ').toLowerCase().indexOf(q) > -1)
       .sort((p, n) => Date.parse(n.createdAt) - Date.parse(p.createdAt))
       .map(o => {
@@ -3752,7 +3836,10 @@ class Component extends DCLogic {
           titleColor: declined ? '#4a4c4f' : '#1c1d1f',
           onToggle: () => this.setState({ expandedId: expanded ? null : o.id }),
           onOpen: () => this.openExternal(o.facebookUrl),
-          openAria: 'Open Facebook post in ' + (o.facebookGroupName || 'Facebook'),
+          platform: this.platformOf(o).label,
+          platformBg: this.platformOf(o).bg,
+          platformFg: this.platformOf(o).fg,
+          openAria: 'Open the ' + this.platformOf(o).label + ' post for ' + o.businessDisplayName,
           onDecline: () => this.setState({ declineFor: o.id, declineChoice: '', declineOtherText: '' })
         };
       });
@@ -3822,6 +3909,7 @@ class Component extends DCLogic {
           note: o.reviewNote || '',
           hasNote: !!o.reviewNote,
           busy: !!st.busy,
+          openLabel: 'Open ' + this.platformOf(o).label + ' post',
           onOpen: () => this.openExternal(o.facebookUrl),
           onApprove: () => this.approveOpp(o.id),
           onDecline: () => this.setState({ reviewDeclineFor: o.id, declineChoice: '', declineOtherText: '' })
@@ -4219,8 +4307,21 @@ class Component extends DCLogic {
       }
       const business = (picked ? picked.businessName : ((this.member(benId) || {}).businessName || '')).trim();
       if (!business) { this.setState({ formError: 'That owner has no business set up yet.', formDupe: '' }); return; }
-      if (!/^https?:\/\/(www\.|m\.|web\.)?facebook\.com\/.+/i.test(url) && !/^https?:\/\/fb\.(com|me)\/.+/i.test(url)) {
-        this.setState({ formError: 'That does not look like a Facebook post link. It should start with https://www.facebook.com/', formDupe: '' });
+      const plat = this.platforms[f.platform] || this.platforms.facebook;
+      const other = plat.key === 'facebook' ? this.platforms.nextdoor : this.platforms.facebook;
+      if (!/^https:\/\//i.test(url)) {
+        this.setState({ formError: 'The link must start with https://', formDupe: '' });
+        return;
+      }
+      if (!plat.test.test(url)) {
+        this.setState({
+          formError: other.test.test(url)
+            ? 'This link looks like a ' + other.label + ' link, but ' + plat.label
+              + ' is selected. Change the platform to ' + other.label + ' or check the URL.'
+            : 'This link doesn\u2019t look like a ' + plat.label
+              + ' link. Please check the URL or change the platform.',
+          formDupe: ''
+        });
         return;
       }
       const dupe = db.opportunities.find(o => !o.archivedAt && o.facebookUrl.replace(/\/$/, '') === url.replace(/\/$/, ''));
@@ -4255,6 +4356,7 @@ class Component extends DCLogic {
         serviceName: picked ? picked.serviceName : '',
         businessDisplayName: business,
         facebookUrl: f.url,
+        platform: f.platform || 'facebook',
         sendForReview: forReview,
         reviewNote: f.reviewNote || '',
         force: !!force
@@ -4262,7 +4364,7 @@ class Component extends DCLogic {
         .then(done => {
           if (!done) return;
           this.setState({
-            form: { beneficiaryId: '', business: '', url: '', review: 'now', reviewNote: '', serviceKey: '' },
+            form: { beneficiaryId: '', business: '', url: '', platform: f.platform || 'facebook', review: 'now', reviewNote: '', serviceKey: '' },
             formError: '', formDupe: '', formWarn: null,
             screen: forReview ? 'home' : 'opps', oppTab: 'open'
           });
@@ -4521,15 +4623,33 @@ class Component extends DCLogic {
         ? reviewCards.length === 0
         : (cards.length === 0 && !(st.oppTab === 'open' && myBizCards.length > 0)),
       hasCards: st.oppTab === 'forme' ? false : cards.length > 0,
+      // Only worth showing once both sources are actually in play.
+      showPlatformFilter: st.oppTab !== 'forme'
+        && db.opportunities.some(o => this.platformOf(o).key === 'nextdoor'),
+      platformFilters: [['all', 'All'], ['facebook', 'Facebook'], ['nextdoor', 'Nextdoor']].map(p => {
+        const on = st.oppPlatform === p[0];
+        return {
+          label: p[1], active: on ? 'true' : 'false',
+          bg: on ? '#fff' : 'transparent', fg: on ? '#1c1d1f' : '#6b6d70',
+          shadow: on ? '0 1px 2px rgba(20,20,22,0.1)' : 'none',
+          onClick: () => this.setState({ oppPlatform: p[0], expandedId: null })
+        };
+      }),
       filtersOpen: st.filtersOpen,
       filterToggleLabel: st.filtersOpen ? 'Hide' : (st.oppMember || st.oppSort !== 'new' ? 'Filters \u00b7 on' : 'Filters'),
       filterToggleBg: st.oppMember || st.oppSort !== 'new' ? 'oklch(0.97 0.02 262)' : '#fff',
       onToggleFilters: () => this.setState({ filtersOpen: !st.filtersOpen }),
-      emptyTitle: st.oppTab === 'open' ? 'You are all caught up'
+      emptyTitle: st.oppTab === 'open'
+        ? (st.oppPlatform !== 'all'
+            ? 'No ' + this.platforms[st.oppPlatform].label + ' posts right now'
+            : 'You are all caught up')
         : st.oppTab === 'forme' ? 'Nothing waiting on you'
         : st.oppTab === 'completed' ? 'No completed tags yet' : 'Nothing marked unable',
       emptyBody: st.oppTab === 'open'
-        ? (q || st.oppMember ? 'No open opportunities match this filter.' : 'Check back soon for new Team Rockstars opportunities.')
+        ? (st.oppPlatform !== 'all'
+            ? 'Nothing open from ' + this.platforms[st.oppPlatform].label + ' at the moment. Choose All to see every open opportunity.'
+            : q || st.oppMember ? 'No open opportunities match this filter.'
+            : 'Check back soon for new Team Rockstars opportunities.')
         : st.oppTab === 'forme' ? 'Posts sent to you for approval show up here, along with everything already live for your business.'
         : st.oppTab === 'completed' ? 'Tags you complete will be kept here as history.'
         : 'Posts you cannot tag will be listed here with the reason.',
@@ -4583,6 +4703,18 @@ class Component extends DCLogic {
           value: String(m2.id),
           label: (m2.businessOwnerName || m2.fullName) + (m2.id === me.id ? ' (me)' : '')
         })),
+      platformTabs: ['facebook', 'nextdoor'].map(k => {
+        const p = this.platforms[k];
+        const on = (st.form.platform || 'facebook') === k;
+        return {
+          label: p.label, active: on ? 'true' : 'false',
+          bg: on ? '#fff' : 'transparent', fg: on ? '#1c1d1f' : '#6b6d70',
+          shadow: on ? '0 1px 2px rgba(20,20,22,0.1)' : 'none',
+          onClick: () => setForm('platform', k)
+        };
+      }),
+      urlLabel: (this.platforms[st.form.platform] || this.platforms.facebook).label + ' post link',
+      urlPlaceholder: (this.platforms[st.form.platform] || this.platforms.facebook).placeholder,
       showServicePicker: !!st.form.beneficiaryId,
       serviceOptions: [{ value: '', label: 'Select a service' }]
         .concat(st.form.beneficiaryId ? this.serviceChoicesFor(+st.form.beneficiaryId).map(c2 => ({ value: c2.value, label: c2.label })) : []),
