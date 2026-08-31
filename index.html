@@ -1862,29 +1862,41 @@
               </sc-for>
             </select>
             <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
-              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most tags completed</div>
+              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most tags completed <span style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8aaad">&mdash; sorted by tags</span></div>
+              <div style="display:grid;grid-template-columns:30px minmax(0,1fr) 46px 46px;gap:8px;align-items:center;padding:8px 13px;border-bottom:1px solid #eceae6;font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#9a9c9f">
+                <span>#</span><span>Member</span><span style="text-align:right">Tags</span><span style="text-align:right">Posts</span>
+              </div>
               <sc-for list="{{ adminTagRank }}" as="tr1" hint-placeholder-count="5">
-                <div style="display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ tr1.bg }}">
+                <div style="display:grid;grid-template-columns:30px minmax(0,1fr) 46px 46px;gap:8px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ tr1.bg }};box-shadow:{{ tr1.shadow }}">
                   <span aria-hidden="true" style="width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;font-size:{{ tr1.rankSize }};font-weight:{{ tr1.rankWeight }};background:{{ tr1.rankBg }};color:{{ tr1.rankColor }};border:1px solid {{ tr1.rankBorder }}">{{ tr1.rank }}</span>
                   <span style="min-width:0">
                     <span style="display:block;font-size:14px;font-weight:{{ tr1.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tr1.name }}</span>
-                    <span style="display:block;font-size:11.5px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tr1.sub }}</span>
+                    <sc-if value="{{ tr1.hasRate }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:block;font-size:11px;color:#a8aaad;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tr1.rate }}</span>
+                    </sc-if>
                   </span>
-                  <span style="font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.02em">{{ tr1.value }}</span>
+                  <span style="text-align:right;font-family:'Instrument Sans',sans-serif;font-size:{{ tr1.tagsSize }};font-weight:{{ tr1.tagsWeight }};color:{{ tr1.tagsColor }};letter-spacing:-0.02em">{{ tr1.tags }}</span>
+                  <span style="text-align:right;font-family:'Instrument Sans',sans-serif;font-size:{{ tr1.postsSize }};font-weight:{{ tr1.postsWeight }};color:{{ tr1.postsColor }};letter-spacing:-0.02em">{{ tr1.posts }}</span>
                 </div>
               </sc-for>
             </div>
 
             <div style="background:#fff;border:1px solid #e6e5e2;border-radius:14px;overflow:hidden">
-              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most posts found</div>
+              <div style="padding:10px 13px;border-bottom:1px solid #eceae6;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9a9c9f">Most posts found <span style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8aaad">&mdash; sorted by posts</span></div>
+              <div style="display:grid;grid-template-columns:30px minmax(0,1fr) 46px 46px;gap:8px;align-items:center;padding:8px 13px;border-bottom:1px solid #eceae6;font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#9a9c9f">
+                <span>#</span><span>Member</span><span style="text-align:right">Tags</span><span style="text-align:right">Posts</span>
+              </div>
               <sc-for list="{{ adminFoundRank }}" as="fr1" hint-placeholder-count="5">
-                <div style="display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ fr1.bg }}">
+                <div style="display:grid;grid-template-columns:30px minmax(0,1fr) 46px 46px;gap:8px;align-items:center;padding:9px 13px;border-bottom:1px solid #f2f1ee;background:{{ fr1.bg }};box-shadow:{{ fr1.shadow }}">
                   <span aria-hidden="true" style="width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Sans',sans-serif;font-size:{{ fr1.rankSize }};font-weight:{{ fr1.rankWeight }};background:{{ fr1.rankBg }};color:{{ fr1.rankColor }};border:1px solid {{ fr1.rankBorder }}">{{ fr1.rank }}</span>
                   <span style="min-width:0">
                     <span style="display:block;font-size:14px;font-weight:{{ fr1.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fr1.name }}</span>
-                    <span style="display:block;font-size:11.5px;color:#9a9c9f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fr1.sub }}</span>
+                    <sc-if value="{{ fr1.hasRate }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:block;font-size:11px;color:#a8aaad;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fr1.rate }}</span>
+                    </sc-if>
                   </span>
-                  <span style="font-family:'Instrument Sans',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.02em">{{ fr1.value }}</span>
+                  <span style="text-align:right;font-family:'Instrument Sans',sans-serif;font-size:{{ fr1.tagsSize }};font-weight:{{ fr1.tagsWeight }};color:{{ fr1.tagsColor }};letter-spacing:-0.02em">{{ fr1.tags }}</span>
+                  <span style="text-align:right;font-family:'Instrument Sans',sans-serif;font-size:{{ fr1.postsSize }};font-weight:{{ fr1.postsWeight }};color:{{ fr1.postsColor }};letter-spacing:-0.02em">{{ fr1.posts }}</span>
                 </div>
               </sc-for>
             </div>
@@ -2201,7 +2213,7 @@ class Component extends DCLogic {
       formError: '', formDupe: '', svcForm: null, svcError: '',
       cf: { id: null, businessId: '', serviceId: '', label: '', text: '' }, cfError: '',
       cSearch: '', range: 'this', rankMonth: '', boardMetric: 'completed', adminTab: 'overview', adminSearch: '',
-      nudgeFor: null, nudgeText: '',
+      nudgeFor: null, nudgeText: '', dismissedAlerts: [],
       mf: null, mfError: '', profile: null, annForm: null, annError: '', expandedAnn: null,
       annDeclineFor: null, annDeclineText: '',
       shareFor: null, shareSearch: '', prefsSheet: null, declineFor: null, declineReason: '', formWarn: null,
@@ -2801,6 +2813,7 @@ class Component extends DCLogic {
       comments: data.comments || [],
       announcements: data.announcements || [],
       annReads: data.annReads || [],
+      alertDismissals: data.alertDismissals || [],
       shares: [],
       events: [],
       nudges: data.nudges || [],
@@ -3151,8 +3164,17 @@ class Component extends DCLogic {
   }
   dismissNudge(id) { this.send('/api/nudges/dismiss', { id }, 'Nudge cleared'); }
   /** Home alerts are per-member and never touch the underlying opportunity. */
-  dismissAlert(kind, refId) { this.send('/api/alerts/dismiss', { kind, refId }, 'Alert cleared'); }
+  dismissAlert(kind, refId) {
+    const key = kind + ':' + refId;
+    if ((this.state.dismissedAlerts || []).indexOf(key) > -1) return;
+    this.send('/api/alerts/dismiss', { kind, refId }, 'Alert cleared').then(done => {
+      // Only once the server confirmed: drop it from the live list so the card
+      // goes immediately, whatever the next bootstrap happens to return.
+      if (done) this.setState(s => ({ dismissedAlerts: (s.dismissedAlerts || []).concat(key) }));
+    });
+  }
   alertDismissed(kind, refId) {
+    if ((this.state.dismissedAlerts || []).indexOf(kind + ':' + refId) > -1) return true;
     return (this.db.alertDismissals || []).some(d =>
       d.memberId === this.me.id && d.kind === kind && d.refId === refId);
   }
@@ -4107,14 +4129,24 @@ class Component extends DCLogic {
       };
     });
 
-    const adminRankOf = metric => this.rankingBy(rankMonth, metric).map(r => Object.assign({
-      name: r.name,
-      rank: String(r.rank),
-      value: String(metric === 'completed' ? r.s.completed : r.s.submitted),
-      sub: metric === 'completed'
-        ? r.s.submitted + ' found' + (r.s.rate === null ? '' : ' \u00b7 ' + r.s.rate + '% completion')
-        : r.s.completed + (r.s.completed === 1 ? ' tag completed' : ' tags completed')
-    }, this.rankStyle(r.rank, r.id === me.id)));
+    // Both metrics are columns in both views; only the sort order changes.
+    const adminRankOf = metric => this.rankingBy(rankMonth, metric).map(r => {
+      const st2 = this.rankStyle(r.rank, r.id === me.id);
+      const lead = { color: '#1c1d1f', weight: '700', size: '17px' };
+      const second = { color: '#6b6d70', weight: '600', size: '15px' };
+      const tags = metric === 'completed' ? lead : second;
+      const posts = metric === 'completed' ? second : lead;
+      return Object.assign({
+        name: r.name,
+        rank: String(r.rank),
+        tags: String(r.s.completed),
+        posts: String(r.s.submitted),
+        tagsColor: tags.color, tagsWeight: tags.weight, tagsSize: tags.size,
+        postsColor: posts.color, postsWeight: posts.weight, postsSize: posts.size,
+        hasRate: r.s.rate !== null,
+        rate: r.s.rate + '% completion'
+      }, st2);
+    });
     const adminTagRank = adminRankOf('completed');
     const adminFoundRank = adminRankOf('submitted');
 
